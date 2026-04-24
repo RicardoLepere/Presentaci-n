@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automatización NegoFIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #1a7a4a;
+    --verde-oscuro: #0d4a2e;
+    --verde-claro: #2da866;
+    --verde-suave: #e8f5ee;
+    --verde-medio: #c2e8d0;
+    --blanco: #ffffff;
+    --gris: #f4f7f5;
+    --gris-texto: #5a6b62;
+    --texto: #1a2e24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--blanco);
+    color: var(--texto);
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--verde-oscuro);
+    padding: 40px 40px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 30px;
+    background: var(--blanco);
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+
+  .header-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .header .brand .logo-box {
+    background: var(--blanco);
+    padding: 6px 14px 4px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .header .brand .logo-box img {
+    display: block;
+    height: 36px;
+    width: auto;
+  }
+
+  .header .brand .logo-box span {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    display: block;
+    letter-spacing: 2px;
+    color: var(--verde-oscuro);
+    margin-top: 3px;
+  }
+
+  .header .brand .dept {
+    color: rgba(255,255,255,0.55);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .header-meta .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .header-meta .meta-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+  .header-meta .meta-value { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); }
+  .header-meta .meta-elaborado { margin-left: auto; text-align: right; }
+
+
+  /* CONTENT */
+  .content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 30px 50px;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--verde);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--verde-medio);
+  }
+
+  /* SOURCE */
+  .source-card {
+    background: var(--verde-suave);
+    border: 1.5px solid var(--verde-medio);
+    border-radius: 14px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+
+  .source-card .icon {
+    width: 46px;
+    height: 46px;
+    background: var(--verde);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .source-card h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--verde-oscuro);
+    margin-bottom: 3px;
+  }
+
+  .source-card p {
+    font-size: 11px;
+    color: var(--gris-texto);
+  }
+
+  /* ARROW */
+  .arrow-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin: 10px 0;
+    gap: 2px;
+  }
+
+  .arrow-center .line { width: 2px; height: 22px; background: var(--verde-medio); }
+  .arrow-center .tip {
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid var(--verde-medio);
+  }
+
+  /* KNIME BOX */
+  .knime-box {
+    background: var(--verde-oscuro);
+    border-radius: 18px;
+    padding: 24px 26px;
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .knime-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--verde-claro), #6ee7a8, var(--verde-claro));
+  }
+
+  .knime-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .knime-badge {
+    background: var(--verde-claro);
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  .knime-header span {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .step-item {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--verde-claro);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.45;
+  }
+
+  .step-text strong { color: white; font-weight: 600; }
+
+  .filter-box {
+    background: rgba(45,168,102,0.15);
+    border: 1px solid rgba(45,168,102,0.35);
+    border-radius: 12px;
+    padding: 14px 18px;
+  }
+
+  .filter-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #6ee7a8;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .ftag {
+    background: rgba(110,231,168,0.12);
+    border: 1px solid rgba(110,231,168,0.3);
+    color: #6ee7a8;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* TEAMS */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .team-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--verde-medio);
+    border-radius: 16px;
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .team-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  .team-card.c1::before { background: var(--verde); }
+  .team-card.c2::before { background: var(--verde-claro); }
+  .team-card.c3::before { background: var(--verde-oscuro); }
+
+  .team-supervisor {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gris-texto);
+    margin-bottom: 5px;
+  }
+
+  .team-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--verde-oscuro);
+    margin-bottom: 12px;
+  }
+
+  .ind-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .ind-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--gris-texto);
+  }
+
+  .ind-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--verde);
+    flex-shrink: 0;
+  }
+
+  /* TIME SAVINGS */
+  .savings-section {
+    background: var(--gris);
+    border-radius: 20px;
+    padding: 28px 26px;
+    margin-top: 30px;
+  }
+
+  .savings-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--verde-oscuro);
+    margin-bottom: 6px;
+  }
+
+  .savings-subtitle {
+    font-size: 12px;
+    color: var(--gris-texto);
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  .savings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .saving-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--verde-medio);
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: center;
+  }
+
+  .saving-card .process-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--verde-oscuro);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .time-comparison {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .time-before {
+    text-align: center;
+  }
+
+  .time-before .label {
+    font-size: 9px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+
+  .time-before .val {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #cc4444;
+  }
+
+  .time-before .unit {
+    font-size: 9px;
+    color: #cc4444;
+    font-weight: 600;
+  }
+
+  .arrow-right {
+    color: var(--verde);
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .time-after .label {
+    font-size: 9px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+
+  .time-after .val {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--verde);
+  }
+
+  .time-after .unit {
+    font-size: 9px;
+    color: var(--verde);
+    font-weight: 600;
+  }
+
+  .saving-monthly {
+    background: var(--verde-suave);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 11px;
+    color: var(--verde-oscuro);
+    font-weight: 600;
+  }
+
+  .saving-monthly span {
+    color: var(--verde);
+    font-weight: 800;
+  }
+
+  /* TOTAL SAVING */
+  .total-saving {
+    background: var(--verde-oscuro);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .total-saving .left h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .total-saving .left p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.5;
+    max-width: 360px;
+  }
+
+  .total-saving .right {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .total-saving .right .big {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    color: #6ee7a8;
+    line-height: 1;
+  }
+
+  .total-saving .right .label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+  }
+
+  /* IMPACT */
+  .impact-section {
+    margin-top: 24px;
+    background: var(--verde-suave);
+    border: 1.5px solid var(--verde-medio);
+    border-radius: 16px;
+    padding: 22px 24px;
+  }
+
+  .impact-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--verde-oscuro);
+    margin-bottom: 14px;
+  }
+
+  .impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .impact-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--verde-medio);
+  }
+
+  .impact-icon { font-size: 22px; flex-shrink: 0; }
+
+  .impact-text h4 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--verde-oscuro);
+    margin-bottom: 4px;
+  }
+
+  .impact-text p {
+    font-size: 11px;
+    color: var(--gris-texto);
+    line-height: 1.45;
+  }
+
+  /* FOOTER */
+  .footer {
+    background: var(--verde-oscuro);
+    padding: 16px 30px;
+    text-align: center;
+  }
+
+  .footer p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .footer strong { color: rgba(255,255,255,0.6); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo-box"><img src="LOGO_NEGOFIN_.jpg" alt="NegoFIN"><span>S.A.E.C.A.</span></div>
+      <span class="dept">Gerencia de Riesgos Crediticios</span>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">
+        <span class="meta-label">Proceso Analizado</span>
+        <span class="meta-value">Supervisión Activa</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Tema</span>
+        <span class="meta-value">Automatización de Carga Indicadores de Productividad y Tiempo (Nivel de Servicio)</span>
+      </div>
+      <div class="meta-item meta-elaborado">
+        <span class="meta-label">Elaborado por</span>
+        <span class="meta-value">Ricardo Pérez — Analista de Organización y Procesos</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- FUENTE -->
+  <div class="section-title">Fuente de datos</div>
+  <div class="source-card">
+    <div class="icon">📋</div>
+    <div>
+      <h3>Sistema SGC</h3>
+      <p>Base de datos de tiempos de atención y productividad de verificadores</p>
+    </div>
+  </div>
+
+  <div class="arrow-center"><div class="line"></div><div class="tip"></div></div>
+
+  <!-- KNIME -->
+  <div class="section-title">Procesamiento automático</div>
+  <div class="knime-box">
+    <div class="knime-header">
+      <div class="knime-badge">KNIME</div>
+      <span>Motor de automatización de datos</span>
+    </div>
+    <div class="steps-grid">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Limpieza automática</strong> — elimina errores, filas vacías y formatos incorrectos</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Filtro inteligente</strong> — identifica y separa cada registro por equipo y verificador</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Cálculo de indicadores</strong> — tiempos, objetivos, productividad y ranking semanal</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Carga automática</strong> — escribe directamente en la planilla de cada supervisor</div>
+      </div>
+    </div>
+    <div class="filter-box">
+      <div class="filter-title">🔍 ¿Qué identifica el filtro en cada registro?</div>
+      <div class="filter-tags">
+        <span class="ftag">Usuario / Verificador</span>
+        <span class="ftag">Equipo asignado</span>
+        <span class="ftag">Fecha de operación</span>
+        <span class="ftag">Tipo de trámite</span>
+        <span class="ftag">Tiempos de atención PV</span>
+        <span class="ftag">Tramo horario</span>
+        <span class="ftag">Objetivo de nivel de servicio</span>
+        <span class="ftag">Productividad por hora</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-center"><div class="line"></div><div class="tip"></div></div>
+
+  <!-- EQUIPOS -->
+  <div class="section-title">Resultado por equipo</div>
+  <div class="teams-grid">
+    <div class="team-card c1">
+      <div class="team-supervisor">Supervisor: BRENAGUI</div>
+      <div class="team-name">Consumo</div>
+      <div class="ind-list">
+        <div class="ind-item"><div class="ind-dot"></div>Nivel de Servicio diario</div>
+        <div class="ind-item"><div class="ind-dot"></div>Ranking semanal</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad diaria</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad por hora</div>
+      </div>
+    </div>
+    <div class="team-card c2">
+      <div class="team-supervisor">Supervisor: JAVINUNE</div>
+      <div class="team-name">Micro</div>
+      <div class="ind-list">
+        <div class="ind-item"><div class="ind-dot"></div>Nivel de Servicio diario</div>
+        <div class="ind-item"><div class="ind-dot"></div>Ranking semanal</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad diaria</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad por hora</div>
+      </div>
+    </div>
+    <div class="team-card c3">
+      <div class="team-supervisor">Supervisor: MARIVILL</div>
+      <div class="team-name">Análisis</div>
+      <div class="ind-list">
+        <div class="ind-item"><div class="ind-dot"></div>Nivel de Servicio diario</div>
+        <div class="ind-item"><div class="ind-dot"></div>Ranking semanal</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad diaria</div>
+        <div class="ind-item"><div class="ind-dot"></div>Productividad por hora</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AHORRO DE TIEMPO -->
+  <div class="savings-section">
+    <div class="savings-title">⏱ Impacto en tiempo operativo</div>
+    <div class="savings-subtitle">Comparativo entre el proceso manual anterior y el proceso automatizado actual · Por supervisor · Por día de carga</div>
+
+    <div class="savings-grid">
+      <div class="saving-card">
+        <div class="process-name">Nivel de Servicio<br>(filtro diario + limpieza)</div>
+        <div class="time-comparison">
+          <div class="time-before">
+            <div class="label">Antes</div>
+            <div class="val">60</div>
+            <div class="unit">min</div>
+          </div>
+          <div class="arrow-right">→</div>
+          <div class="time-after">
+            <div class="label">Ahora</div>
+            <div class="val">5</div>
+            <div class="unit">min</div>
+          </div>
+        </div>
+        <div class="saving-monthly">Ahorro mensual: <span>~825 min / equipo</span></div>
+      </div>
+
+      <div class="saving-card">
+        <div class="process-name">Productividad<br>Diaria</div>
+        <div class="time-comparison">
+          <div class="time-before">
+            <div class="label">Antes</div>
+            <div class="val">20</div>
+            <div class="unit">min</div>
+          </div>
+          <div class="arrow-right">→</div>
+          <div class="time-after">
+            <div class="label">Ahora</div>
+            <div class="val">2</div>
+            <div class="unit">min</div>
+          </div>
+        </div>
+        <div class="saving-monthly">Ahorro mensual: <span>~360 min / equipo</span></div>
+      </div>
+
+      <div class="saving-card">
+        <div class="process-name">Productividad<br>por Hora</div>
+        <div class="time-comparison">
+          <div class="time-before">
+            <div class="label">Antes</div>
+            <div class="val">10</div>
+            <div class="unit">min</div>
+          </div>
+          <div class="arrow-right">→</div>
+          <div class="time-after">
+            <div class="label">Ahora</div>
+            <div class="val">1</div>
+            <div class="unit">min</div>
+          </div>
+        </div>
+        <div class="saving-monthly">Ahorro mensual: <span>~198 min / equipo</span></div>
+      </div>
+    </div>
+
+    <div class="total-saving">
+      <div class="left">
+        <h3>Ahorro total por supervisor al mes</h3>
+        <p>Considerando 22 días hábiles y los 3 procesos automatizados. Este tiempo es recuperado íntegramente para la gestión del equipo.</p>
+      </div>
+      <div class="right">
+        <div class="big">~23 hs</div>
+        <div class="label">por supervisor / mes</div>
+      </div>
+    </div>
+
+    <!-- AHORRO ANUAL -->
+    <div style="margin-top:16px; background:white; border:1.5px solid var(--verde-medio); border-radius:16px; padding:22px 24px;">
+      <div style="font-family:'Montserrat',sans-serif; font-size:13px; font-weight:800; color:var(--verde-oscuro); margin-bottom:16px;">
+        📅 Proyección anual — 3 supervisores · 12 meses
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px;">
+
+        <div style="text-align:center; background:var(--verde-suave); border-radius:12px; padding:16px 10px; border:1px solid var(--verde-medio);">
+          <div style="font-size:10px; font-weight:600; color:var(--gris-texto); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Nivel de Servicio</div>
+          <div style="font-family:'Montserrat',sans-serif; font-size:22px; font-weight:900; color:var(--verde);">~330 hs</div>
+          <div style="font-size:10px; color:var(--gris-texto); margin-top:4px;">ahorradas / año<br>entre los 3 equipos</div>
+        </div>
+
+        <div style="text-align:center; background:var(--verde-suave); border-radius:12px; padding:16px 10px; border:1px solid var(--verde-medio);">
+          <div style="font-size:10px; font-weight:600; color:var(--gris-texto); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Productividad Diaria</div>
+          <div style="font-family:'Montserrat',sans-serif; font-size:22px; font-weight:900; color:var(--verde);">~144 hs</div>
+          <div style="font-size:10px; color:var(--gris-texto); margin-top:4px;">ahorradas / año<br>entre los 3 equipos</div>
+        </div>
+
+        <div style="text-align:center; background:var(--verde-suave); border-radius:12px; padding:16px 10px; border:1px solid var(--verde-medio);">
+          <div style="font-size:10px; font-weight:600; color:var(--gris-texto); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Productividad por Hora</div>
+          <div style="font-family:'Montserrat',sans-serif; font-size:22px; font-weight:900; color:var(--verde);">~79 hs</div>
+          <div style="font-size:10px; color:var(--gris-texto); margin-top:4px;">ahorradas / año<br>entre los 3 equipos</div>
+        </div>
+
+        <div style="text-align:center; background:var(--verde-oscuro); border-radius:12px; padding:16px 10px;">
+          <div style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Total General</div>
+          <div style="font-family:'Montserrat',sans-serif; font-size:28px; font-weight:900; color:#6ee7a8;">~553 hs</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5); margin-top:4px;">ahorradas / año<br>entre los 3 supervisores</div>
+        </div>
+
+      </div>
+      <div style="margin-top:14px; background:var(--gris); border-radius:10px; padding:12px 16px; font-size:11px; color:var(--gris-texto); line-height:1.6;">
+        💡 <strong style="color:var(--verde-oscuro);">553 horas anuales</strong> equivalen a más de <strong style="color:var(--verde-oscuro);">69 jornadas laborales completas</strong> que los supervisores pueden dedicar a lo que realmente importa: su equipo y el área comercial.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- IMPACTO -->
+  <div class="impact-section">
+    <div class="impact-title">¿En qué se invierte el tiempo recuperado?</div>
+    <div class="impact-grid">
+      <div class="impact-item">
+        <div class="impact-icon">💬</div>
+        <div class="impact-text">
+          <h4>Mejor respuesta al área comercial</h4>
+          <p>Los supervisores pueden atender consultas y requerimientos del área comercial con mayor agilidad y foco.</p>
+        </div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">🤝</div>
+        <div class="impact-text">
+          <h4>Mayor dedicación al equipo</h4>
+          <p>Más tiempo disponible para acompañar, orientar y desarrollar a los verificadores en su día a día.</p>
+        </div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">🎯</div>
+        <div class="impact-text">
+          <h4>Decisiones más rápidas</h4>
+          <p>Los indicadores están disponibles al instante, permitiendo actuar sobre desvíos en el momento justo.</p>
+        </div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">⚡</div>
+        <div class="impact-text">
+          <h4>Liberación de carga operativa</h4>
+          <p>Se elimina el trabajo manual repetitivo, reduciendo el desgaste y los errores humanos en la carga de datos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p><strong>NegoFIN · Departamento de Riesgo Crediticio</strong> · Proyecto de Automatización Supervisión Activa · 2026</p>
+</div>
+
+</body>
+</html>
