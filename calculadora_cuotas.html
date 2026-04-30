@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Cuotas — NegoFIN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ng-verde':  '#1a7a4a',
+            'ng-oscuro': '#0d4a2e',
+            'ng-claro':  '#2da866',
+            'ng-suave':  '#e8f5ee',
+            'ng-medio':  '#c2e8d0',
+          },
+          fontFamily: {
+            inter:       ['Inter', 'sans-serif'],
+            montserrat:  ['Montserrat', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    /* ── Periodicidades ── */
+    const PERIODOS = [
+      { id: 'diaria',     label: 'Diaria',     ppa: 365, unidad: 'día',   desc: '365 cuotas / año' },
+      { id: 'semanal',    label: 'Semanal',    ppa: 52,  unidad: 'sem.',  desc: '52 cuotas / año'  },
+      { id: 'bimensual',  label: 'Bimensual',  ppa: 24,  unidad: 'qnc.',  desc: '24 cuotas / año (2× al mes)' },
+      { id: 'trimestral', label: 'Trimestral', ppa: 4,   unidad: 'trim.', desc: '4 cuotas / año'   },
+      { id: 'semestral',  label: 'Semestral',  ppa: 2,   unidad: 'sem.',  desc: '2 cuotas / año'   },
+      { id: 'anual',      label: 'Anual',      ppa: 1,   unidad: 'año',   desc: '1 cuota / año'    },
+    ];
+
+    /* ── PMT (Sistema Francés — cuota fija) ── */
+    function calcPMT(principal, tasaAnual, plazoMeses, ppa) {
+      const P = Math.max(0, Number(principal) || 0);
+      const r = (Number(tasaAnual) || 0) / 100 / ppa;
+      const n = Math.round((Number(plazoMeses) || 0) / 12 * ppa);
+      if (P <= 0 || n <= 0) return null;
+      const cuota = r === 0 ? P / n : P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const total  = cuota * n;
+      const interes = total - P;
+      return { cuota, n, total, interes, pctCap: (P / total) * 100, pctInt: (interes / total) * 100, pctSobCap: (interes / P) * 100 };
+    }
+
+    /* ── Formatters ── */
+    const gs  = v => '₲ ' + Math.round(v).toLocaleString('es-PY');
+    const num = v => Math.round(v).toLocaleString('es-PY');
+
+    /* ── Datos simulados de base (vendrían del SGC / tking) ── */
+    const DB = { cliente: 'EDNYARES S.A.', nroOp: '791061', origen: 'ALTO BETA', fecha: '19/04/2026', monto: 2000000, tasa: 36, plazo: 12 };
+
+    /* ════════════════════════════════════════════════
+       COMPONENTE PRINCIPAL
+    ════════════════════════════════════════════════ */
+    function CalculadoraCuotas() {
+      const [monto,   setMonto]   = useState(DB.monto);
+      const [tasa,    setTasa]    = useState(DB.tasa);
+      const [plazo,   setPlazo]   = useState(DB.plazo);
+      const [periodo, setPeriodo] = useState('semanal');
+      const [loaded,  setLoaded]  = useState(false);
+
+      useEffect(() => { const t = setTimeout(() => setLoaded(true), 700); return () => clearTimeout(t); }, []);
+
+      const activo = useMemo(() => {
+        const p = PERIODOS.find(p => p.id === periodo);
+        return p ? calcPMT(monto, tasa, plazo, p.ppa) : null;
+      }, [monto, tasa, plazo, periodo]);
+
+      const todos = useMemo(() =>
+        PERIODOS.map(p => ({ ...p, res: calcPMT(monto, tasa, plazo, p.ppa) }))
+      , [monto, tasa, plazo]);
+
+      const minCuota = useMemo(() => Math.min(...todos.filter(r => r.res).map(r => r.res.cuota)), [todos]);
+      const maxCuota = useMemo(() => Math.max(...todos.filter(r => r.res).map(r => r.res.cuota)), [todos]);
+
+      const periodoActivo = PERIODOS.find(p => p.id === periodo);
+
+      return (
+        <div className="min-h-screen flex flex-col">
+
+          {/* ── HEADER ── */}
+          <header className="bg-ng-oscuro px-6 md:px-8 py-5">
+            <div className="max-w-5xl mx-auto flex items-center gap-4">
+              <div className="bg-white rounded-xl px-3 py-1.5 text-center shadow flex-shrink-0">
+                <div className="font-montserrat font-black text-ng-oscuro text-sm leading-tight tracking-tight">NegoFIN</div>
+                <div className="font-montserrat font-bold text-ng-oscuro text-[7px] tracking-[2.5px] leading-tight mt-0.5">S.A.E.C.A.</div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="font-montserrat font-black text-white text-lg md:text-xl leading-tight truncate">
+                  Calculadora de Cuotas
+                </h1>
+                <p className="text-white/45 text-xs mt-0.5">Gerencia de Riesgos Crediticios · Módulo de Análisis</p>
+              </div>
+              <div className="text-right hidden sm:block flex-shrink-0">
+                <div className="text-white/35 text-[9px] uppercase tracking-[2px] font-semibold">Op. Nro.</div>
+                <div className="font-mono text-sm text-white/65 mt-0.5">{DB.nroOp}</div>
+                <div className="text-white/30 text-[10px] mt-0.5">{DB.fecha}</div>
+              </div>
+            </div>
+          </header>
+
+          {/* ── MAIN ── */}
+          <main className="max-w-5xl mx-auto w-full px-4 md:px-6 py-5 flex-1 space-y-4">
+
+            {/* ── DATOS DEL CRÉDITO ── */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-ng-suave border-b border-ng-medio flex items-center justify-between gap-3">
+                <h2 className="font-montserrat font-bold text-ng-oscuro text-[10px] uppercase tracking-widest">Datos del Crédito</h2>
+                <span className={`flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-500 ${loaded ? 'bg-ng-medio text-ng-oscuro' : 'bg-gray-100 text-gray-400'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${loaded ? 'bg-ng-verde' : 'bg-gray-300'}`} />
+                  {loaded ? 'Cargado desde SGC' : 'Cargando datos…'}
+                </span>
+              </div>
+
+              <div className={`p-5 transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-30'}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                  {/* Monto */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Monto del Crédito</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ng-verde font-bold text-sm select-none pointer-events-none">₲</span>
+                      <input
+                        type="number" min="0" step="50000"
+                        value={monto}
+                        onChange={e => setMonto(Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm font-mono text-gray-800 focus:outline-none focus:ring-2 focus:ring-ng-claro focus:border-transparent"
+                      />
+                    </div>
+                    <div className="text-[10px] text-ng-verde font-semibold mt-1 font-mono">{gs(monto)}</div>
+                  </div>
+
+                  {/* Tasa */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tasa de Interés Anual</label>
+                    <div className="relative">
+                      <input
+                        type="number" min="0" max="300" step="0.5"
+                        value={tasa}
+                        onChange={e => setTasa(Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full pl-3 pr-8 py-2.5 border border-gray-300 rounded-xl text-sm font-mono text-gray-800 focus:outline-none focus:ring-2 focus:ring-ng-claro focus:border-transparent"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none pointer-events-none">%</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1">{(tasa / 12).toFixed(2)}% mensual</div>
+                  </div>
+
+                  {/* Plazo */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Plazo</label>
+                    <div className="relative">
+                      <input
+                        type="number" min="1" max="360"
+                        value={plazo}
+                        onChange={e => setPlazo(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full pl-3 pr-16 py-2.5 border border-gray-300 rounded-xl text-sm font-mono text-gray-800 focus:outline-none focus:ring-2 focus:ring-ng-claro focus:border-transparent"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs select-none pointer-events-none">meses</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1">{(plazo / 12).toFixed(1)} años</div>
+                  </div>
+
+                  {/* Info operación */}
+                  <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100 space-y-1.5">
+                    <div className="text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-2">Operación</div>
+                    {[['Cliente', DB.cliente], ['Origen', DB.origen], ['Verif.', DB.fecha]].map(([k, v]) => (
+                      <div key={k} className="flex justify-between items-center gap-2 text-xs">
+                        <span className="text-gray-400 flex-shrink-0">{k}</span>
+                        <span className="font-semibold text-gray-700 text-right truncate">{v}</span>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => { setMonto(DB.monto); setTasa(DB.tasa); setPlazo(DB.plazo); }}
+                      className="w-full mt-2 text-[10px] text-ng-verde font-semibold bg-ng-suave hover:bg-ng-medio rounded-lg py-1.5 transition-colors"
+                    >
+                      ↺ Restaurar desde SGC
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── SELECTOR PERIODICIDAD ── */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-ng-suave border-b border-ng-medio">
+                <h2 className="font-montserrat font-bold text-ng-oscuro text-[10px] uppercase tracking-widest">Seleccionar Periodicidad de Pago</h2>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {PERIODOS.map(p => {
+                    const r = todos.find(t => t.id === p.id)?.res;
+                    const isActive = periodo === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setPeriodo(p.id)}
+                        title={p.desc}
+                        className={`rounded-xl border-2 px-2 py-3 text-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-ng-claro focus:ring-offset-1
+                          ${isActive
+                            ? 'border-ng-verde bg-ng-verde text-white shadow-lg scale-[1.04]'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-ng-claro hover:bg-ng-suave'
+                          }`}
+                      >
+                        <div className={`font-montserrat font-black text-[11px] leading-tight ${isActive ? 'text-white' : 'text-ng-oscuro'}`}>
+                          {p.label}
+                        </div>
+                        <div className={`text-[9px] mt-0.5 ${isActive ? 'text-white/65' : 'text-gray-400'}`}>{p.ppa}×/año</div>
+                        {r && (
+                          <div className={`text-[10px] font-bold font-mono mt-2 ${isActive ? 'text-green-200' : 'text-ng-verde'}`}>
+                            {gs(r.cuota)}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* ── RESULTADO PRINCIPAL ── */}
+            {activo && (
+              <section className="bg-ng-oscuro rounded-2xl shadow-xl overflow-hidden">
+                {/* cabecera */}
+                <div className="px-5 md:px-6 py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-montserrat font-black text-white text-[11px] uppercase tracking-widest">
+                    Resultado — Pago {periodoActivo?.label}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="bg-ng-claro/80 text-white text-[10px] font-bold px-3 py-1 rounded-full">{plazo} meses</span>
+                    <span className="bg-white/10 text-white/75 text-[10px] font-bold px-3 py-1 rounded-full">{num(activo.n)} cuotas</span>
+                    <span className="bg-white/10 text-white/75 text-[10px] font-bold px-3 py-1 rounded-full">{tasa}% anual</span>
+                  </div>
+                </div>
+
+                {/* tarjetas */}
+                <div className="p-4 md:p-5 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                  <div className="bg-ng-verde/25 border border-ng-claro/30 rounded-xl p-4">
+                    <div className="text-white/45 text-[9px] uppercase tracking-widest font-bold mb-2">Valor de Cuota</div>
+                    <div className="font-montserrat font-black text-[20px] md:text-[22px] leading-tight text-green-300">{gs(activo.cuota)}</div>
+                    <div className="text-white/35 text-[9px] mt-1.5">cada {periodoActivo?.unidad}</div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="text-white/45 text-[9px] uppercase tracking-widest font-bold mb-2">Nº de Cuotas</div>
+                    <div className="font-montserrat font-black text-[28px] md:text-[32px] leading-none text-white">{num(activo.n)}</div>
+                    <div className="text-white/35 text-[9px] mt-1.5">períodos totales</div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="text-white/45 text-[9px] uppercase tracking-widest font-bold mb-2">Total a Pagar</div>
+                    <div className="font-montserrat font-black text-[20px] md:text-[22px] leading-tight text-white">{gs(activo.total)}</div>
+                    <div className="text-white/35 text-[9px] mt-1.5">capital + intereses</div>
+                  </div>
+
+                  <div className="bg-yellow-500/10 border border-yellow-400/20 rounded-xl p-4">
+                    <div className="text-white/45 text-[9px] uppercase tracking-widest font-bold mb-2">Interés Total</div>
+                    <div className="font-montserrat font-black text-[20px] md:text-[22px] leading-tight text-yellow-300">{gs(activo.interes)}</div>
+                    <div className="text-white/35 text-[9px] mt-1.5">{activo.pctSobCap.toFixed(1)}% sobre el capital</div>
+                  </div>
+                </div>
+
+                {/* barra capital / interés */}
+                <div className="px-4 md:px-5 pb-5">
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3.5">
+                    <div className="flex justify-between text-[9px] text-white/35 mb-1.5 font-semibold uppercase tracking-wider">
+                      <span>Capital</span><span>Interés</span>
+                    </div>
+                    <div className="h-3 bg-white/10 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-ng-claro transition-all duration-500" style={{ width: `${activo.pctCap}%` }} />
+                      <div className="h-full bg-yellow-400"                            style={{ width: `${activo.pctInt}%` }} />
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-ng-claro text-[10px] font-bold">{gs(monto)} · {activo.pctCap.toFixed(0)}%</span>
+                      <span className="text-yellow-400 text-[10px] font-bold">{gs(activo.interes)} · {activo.pctInt.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* ── TABLA COMPARATIVA ── */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-ng-suave border-b border-ng-medio">
+                <h2 className="font-montserrat font-bold text-ng-oscuro text-[10px] uppercase tracking-widest">
+                  Cuadro Comparativo — Todas las Periodicidades
+                </h2>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead>
+                    <tr className="bg-gray-50 border-b-2 border-gray-200">
+                      {['Periodicidad', 'Nº Cuotas', 'Valor Cuota', 'Total a Pagar', 'Interés Total', '% Interés'].map((h, i) => (
+                        <th key={h} className={`py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest ${i === 0 ? 'px-5 text-left' : 'px-4 text-right'}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {todos.map(p => {
+                      const r = p.res;
+                      const isActive   = p.id === periodo;
+                      const isCheapest = r && Math.abs(r.cuota - minCuota) < 0.01;
+                      const isMostExp  = r && Math.abs(r.cuota - maxCuota) < 0.01;
+
+                      return (
+                        <tr
+                          key={p.id}
+                          onClick={() => setPeriodo(p.id)}
+                          className={`cursor-pointer transition-colors duration-100 ${isActive ? 'bg-ng-suave' : 'hover:bg-gray-50'}`}
+                        >
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-ng-verde' : 'bg-gray-200'}`} />
+                              <span className={`font-semibold ${isActive ? 'text-ng-oscuro' : 'text-gray-700'}`}>{p.label}</span>
+                              <span className="text-[9px] text-gray-400 hidden md:inline">{p.ppa}×/año</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono text-gray-500 text-[13px]">
+                            {r ? num(r.n) : '—'}
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isCheapest && <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold hidden lg:inline">MÍN</span>}
+                              {isMostExp  && <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold hidden lg:inline">MÁX</span>}
+                              <span className={`font-mono font-bold text-[13px] ${isActive ? 'text-ng-verde' : 'text-gray-800'}`}>
+                                {r ? gs(r.cuota) : '—'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono text-gray-500 text-[13px]">
+                            {r ? gs(r.total) : '—'}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono text-orange-600 text-[13px]">
+                            {r ? gs(r.interes) : '—'}
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            {r ? (
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${
+                                r.pctSobCap < 20 ? 'bg-green-50 text-green-700' :
+                                r.pctSobCap < 50 ? 'bg-yellow-50 text-yellow-700' :
+                                                   'bg-red-50 text-red-700'
+                              }`}>
+                                {r.pctSobCap.toFixed(1)}%
+                              </span>
+                            ) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-[10px] text-gray-400">
+                  Sistema Francés (cuota fija) · Tasa nominal anual vencida · Clic en fila para seleccionar periodicidad
+                </span>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5 text-[10px]"><span className="inline-block w-5 h-3 bg-green-100 rounded"></span><span className="text-green-700 font-semibold">Cuota mín.</span></span>
+                  <span className="flex items-center gap-1.5 text-[10px]"><span className="inline-block w-5 h-3 bg-red-100 rounded"></span><span className="text-red-600 font-semibold">Cuota máx.</span></span>
+                </div>
+              </div>
+            </section>
+
+          </main>
+
+          {/* ── FOOTER ── */}
+          <footer className="bg-ng-oscuro py-4 px-6 text-center mt-2">
+            <p className="text-white/30 text-xs">
+              <strong className="text-white/55">NegoFIN · Departamento de Riesgo Crediticio</strong>
+              {' '}· Módulo Calculadora de Cuotas · 2026
+            </p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<CalculadoraCuotas />);
+  </script>
+</body>
+</html>
