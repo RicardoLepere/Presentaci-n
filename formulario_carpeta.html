@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingreso de Carpeta — Sistema de Créditos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'nav':    '#0e2348',
+            'nav-m':  '#1a3a72',
+            'nav-lt': '#2563eb',
+            'sys':    '#f0f4f8',
+          },
+          fontFamily: {
+            inter:      ['Inter', 'sans-serif'],
+            montserrat: ['Montserrat', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-sys font-inter min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    /* ── Actividades laborales ── */
+    const ACTIVIDADES = [
+      { value: '',               label: '— Seleccionar —',           grupo: null      },
+      { value: 'asalariado',     label: 'Asalariado',                 grupo: 'consumo' },
+      { value: 'profesional',    label: 'Profesional Independiente',  grupo: 'consumo' },
+      { value: 'jubilado',       label: 'Jubilado IPS',               grupo: null      },
+      { value: 'microempresario',label: 'Microempresario',            grupo: 'micro'   },
+      { value: 'informal',       label: 'Informal con negocio',       grupo: 'micro'   },
+      { value: 'comerciante',    label: 'Comerciante con patente',    grupo: 'micro'   },
+    ];
+
+    /* ── Lógica de validación ── */
+    function getValidation(actividad, banca) {
+      if (!actividad || !banca) return null;
+      const act = ACTIVIDADES.find(a => a.value === actividad);
+      if (!act || !act.grupo) return null; // jubilado: neutral
+      if (act.grupo === banca) return { ok: true };
+      const suggestLabel = act.grupo === 'micro' ? 'MICRO' : 'CONSUMO';
+      return {
+        ok: false,
+        suggest: act.grupo,
+        suggestLabel,
+        msg: `Este perfil corresponde a la banca ${suggestLabel}. ¿Desea confirmar igualmente?`,
+      };
+    }
+
+    /* ── Campo genérico ── */
+    function Field({ label, required, hint, children }) {
+      return (
+        <div>
+          <label className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+            {label}
+            {required && <span className="text-red-400">*</span>}
+          </label>
+          {children}
+          {hint && <p className="text-[10px] text-gray-400 mt-1">{hint}</p>}
+        </div>
+      );
+    }
+
+    /* ── Chip de estado ── */
+    function BancaChip({ grupo }) {
+      if (!grupo) return <span className="text-[10px] text-gray-400 font-medium">Compatible con ambas bancas</span>;
+      return grupo === 'consumo'
+        ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">👤 Perfil Banca CONSUMO</span>
+        : <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">🏪 Perfil Banca MICRO</span>;
+    }
+
+    /* ══════════════════════════════════════════════
+       COMPONENTE PRINCIPAL
+    ══════════════════════════════════════════════ */
+    function FormularioCarpeta() {
+      const [form, setForm] = useState({
+        nombre: '', ci: '', actividad: '', banca: '', ingreso: '', empleador: '',
+      });
+      const [override,  setOverride]  = useState(false);
+      const [confirmed, setConfirmed] = useState(false);
+
+      const [nroCarpeta] = useState(() => {
+        const n = String(Date.now()).slice(-5);
+        return `CRP-2026-${n}`;
+      });
+
+      /* Actualizar campo y resetear override al cambiar actividad o banca */
+      const set = (k, v) => {
+        setForm(f => ({ ...f, [k]: v }));
+        if (k === 'actividad' || k === 'banca') {
+          setOverride(false);
+          setConfirmed(false);
+        }
+      };
+
+      const val = useMemo(() => getValidation(form.actividad, form.banca), [form.actividad, form.banca]);
+
+      const actividadInfo = ACTIVIDADES.find(a => a.value === form.actividad);
+
+      const canSubmit =
+        form.nombre.trim() !== '' &&
+        form.ci.trim()     !== '' &&
+        form.actividad     !== '' &&
+        form.banca         !== '' &&
+        (val === null || val.ok || override);
+
+      const handleSubmit = () => {
+        if (canSubmit) setConfirmed(true);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+
+          {/* ── HEADER ── */}
+          <header className="bg-nav shadow-xl">
+            <div className="max-w-4xl mx-auto px-5 md:px-8 py-4 flex items-center gap-4">
+              {/* Logo/ícono sistema */}
+              <div className="w-10 h-10 bg-nav-lt rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-white/40 text-[9px] uppercase tracking-[3px] font-semibold mb-0.5">Sistema de Créditos</p>
+                <h1 className="font-montserrat font-black text-white text-lg md:text-xl leading-tight">
+                  Ingreso de Carpeta
+                </h1>
+              </div>
+
+              {/* Carpeta Nro. */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-white/35 text-[9px] uppercase tracking-[2px] font-semibold">Carpeta Nro.</div>
+                <div className="font-mono text-sm text-white/70 mt-0.5">{nroCarpeta}</div>
+                <div className="text-white/30 text-[9px] mt-0.5">
+                  {new Date().toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </div>
+              </div>
+            </div>
+
+            {/* Barra de estado */}
+            <div className="border-t border-white/10 px-5 md:px-8 py-2 max-w-4xl mx-auto flex items-center gap-6 flex-wrap">
+              {[
+                { label: 'Datos del solicitante', done: form.nombre && form.ci },
+                { label: 'Clasificación crediticia', done: form.actividad && form.banca && (val === null || val.ok || override) },
+                { label: 'Información económica', done: form.ingreso || form.empleador },
+              ].map((step, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black flex-shrink-0 ${
+                    step.done ? 'bg-green-400 text-white' : 'bg-white/20 text-white/50'
+                  }`}>
+                    {step.done ? '✓' : i + 1}
+                  </div>
+                  <span className={`text-[10px] font-medium ${step.done ? 'text-green-300' : 'text-white/40'}`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </header>
+
+          {/* ── SUCCESS STATE ── */}
+          {confirmed ? (
+            <main className="max-w-4xl mx-auto w-full px-4 md:px-6 py-12 flex-1 flex items-center justify-center">
+              <div className="bg-white rounded-3xl shadow-xl border border-green-100 p-10 text-center max-w-md w-full">
+                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <span className="text-4xl">✓</span>
+                </div>
+                <h2 className="font-montserrat font-black text-2xl text-green-700 mb-2">Carpeta Confirmada</h2>
+                <p className="text-gray-500 text-sm mb-1">
+                  Carpeta <span className="font-mono font-semibold text-nav">{nroCarpeta}</span> ingresada correctamente.
+                </p>
+                <p className="text-gray-500 text-sm mb-6">
+                  Cliente: <span className="font-semibold text-gray-700">{form.nombre}</span>
+                </p>
+                {override && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6 text-amber-700 text-xs font-semibold">
+                    ⚡ Ingresado con excepción de banca confirmada
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setForm({ nombre: '', ci: '', actividad: '', banca: '', ingreso: '', empleador: '' });
+                    setOverride(false);
+                    setConfirmed(false);
+                  }}
+                  className="w-full py-3 bg-nav text-white font-bold rounded-xl hover:bg-nav-m transition-colors"
+                >
+                  Nueva carpeta
+                </button>
+              </div>
+            </main>
+          ) : (
+
+          /* ── FORM ── */
+          <main className="max-w-4xl mx-auto w-full px-4 md:px-6 py-5 flex-1 space-y-4">
+
+            {/* ─ Datos del solicitante ─ */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-5 h-5 bg-nav rounded-md flex items-center justify-center text-white text-[10px] font-black">1</span>
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Datos del Solicitante</h2>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Nombre completo" required>
+                  <input
+                    type="text"
+                    placeholder="Ej: María García López"
+                    value={form.nombre}
+                    onChange={e => set('nombre', e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-nav-lt focus:border-transparent transition-shadow"
+                  />
+                </Field>
+                <Field label="C.I. — Cédula de Identidad" required>
+                  <input
+                    type="text"
+                    placeholder="Ej: 4.521.307"
+                    inputMode="numeric"
+                    value={form.ci}
+                    onChange={e => set('ci', e.target.value.replace(/[^\d.]/g, ''))}
+                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-mono text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-nav-lt focus:border-transparent"
+                  />
+                </Field>
+              </div>
+            </section>
+
+            {/* ─ Clasificación crediticia ─ */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-5 h-5 bg-nav rounded-md flex items-center justify-center text-white text-[10px] font-black">2</span>
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Clasificación Crediticia</h2>
+              </div>
+              <div className="p-5 space-y-6">
+
+                {/* Actividad laboral */}
+                <Field label="Tipo de Actividad Laboral" required>
+                  <div className="relative">
+                    <select
+                      value={form.actividad}
+                      onChange={e => set('actividad', e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-nav-lt focus:border-transparent appearance-none cursor-pointer pr-10"
+                    >
+                      {ACTIVIDADES.map(a => (
+                        <option key={a.value} value={a.value}>{a.label}</option>
+                      ))}
+                    </select>
+                    <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                  {form.actividad && (
+                    <div className="mt-2">
+                      <BancaChip grupo={actividadInfo?.grupo} />
+                    </div>
+                  )}
+                </Field>
+
+                {/* Selector de banca */}
+                <div>
+                  <label className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+                    Tipo de Banca <span className="text-red-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        id:    'micro',
+                        label: 'MICRO',
+                        sub:   'Microempresario · Comerciante · Informal',
+                        icon:  '🏪',
+                        ring:  'focus:ring-emerald-400',
+                        activeBg:  'bg-emerald-700',
+                        activeBdr: 'border-emerald-700',
+                        activeSh:  'shadow-emerald-200',
+                      },
+                      {
+                        id:    'consumo',
+                        label: 'CONSUMO',
+                        sub:   'Asalariado · Profesional · Jubilado',
+                        icon:  '👤',
+                        ring:  'focus:ring-blue-400',
+                        activeBg:  'bg-nav-lt',
+                        activeBdr: 'border-nav-lt',
+                        activeSh:  'shadow-blue-200',
+                      },
+                    ].map(b => {
+                      const isActive = form.banca === b.id;
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => set('banca', b.id)}
+                          className={`py-5 px-4 rounded-2xl border-2 text-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 ${b.ring}
+                            ${isActive
+                              ? `${b.activeBg} ${b.activeBdr} text-white shadow-xl ${b.activeSh} scale-[1.03]`
+                              : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-white hover:border-gray-300'
+                            }`}
+                        >
+                          <div className="text-3xl mb-2">{b.icon}</div>
+                          <div className={`font-montserrat font-black text-xl tracking-wide mb-1 ${isActive ? 'text-white' : 'text-nav'}`}>
+                            {b.label}
+                          </div>
+                          <div className={`text-[10px] leading-relaxed ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
+                            {b.sub}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ── ALERTA DE VALIDACIÓN ── */}
+                {val !== null && (
+                  <div
+                    className={`rounded-xl border-l-4 p-4 transition-all duration-200 ${
+                      val.ok
+                        ? 'bg-green-50 border-green-500'
+                        : override
+                          ? 'bg-amber-50 border-amber-400'
+                          : 'bg-orange-50 border-orange-500'
+                    }`}
+                  >
+                    {val.ok ? (
+                      /* ✓ Correcto */
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-green-600 text-lg font-black">✓</span>
+                        </div>
+                        <div>
+                          <p className="text-green-800 text-sm font-bold">Banca correcta para el perfil declarado</p>
+                          <p className="text-green-600 text-xs mt-0.5">La actividad declarada es compatible con la banca seleccionada.</p>
+                        </div>
+                      </div>
+                    ) : override ? (
+                      /* ⚡ Excepción confirmada */
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-amber-600 text-sm">⚡</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-amber-800 text-sm font-bold">Excepción confirmada — ingresando de todas formas</p>
+                          <p className="text-amber-600 text-xs mt-0.5 leading-relaxed">
+                            La banca seleccionada difiere del perfil declarado. Esta inconsistencia quedará registrada en la carpeta.
+                          </p>
+                          <button
+                            onClick={() => setOverride(false)}
+                            className="mt-2 text-[11px] text-amber-700 font-bold underline hover:no-underline"
+                          >
+                            ← Cancelar excepción
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ⚠ Inconsistencia */
+                      <div>
+                        <div className="flex items-start gap-3 mb-4">
+                          <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-orange-600 text-xl">⚠</span>
+                          </div>
+                          <div>
+                            <p className="text-orange-900 text-sm font-bold leading-snug">
+                              ⚠ {val.msg}
+                            </p>
+                            <p className="text-orange-700 text-xs mt-1">
+                              El tipo de actividad declarada sugiere que esta operación debería tramitarse por la banca <strong>{val.suggestLabel}</strong>.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2.5 pl-12">
+                          <button
+                            onClick={() => set('banca', val.suggest)}
+                            className="px-4 py-2 bg-nav text-white text-xs font-bold rounded-xl hover:bg-nav-m transition-colors shadow-sm"
+                          >
+                            Cambiar a {val.suggestLabel}
+                          </button>
+                          <button
+                            onClick={() => setOverride(true)}
+                            className="px-4 py-2 bg-white border border-orange-300 text-orange-700 text-xs font-bold rounded-xl hover:bg-orange-50 transition-colors"
+                          >
+                            Confirmar de todas formas
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            </section>
+
+            {/* ─ Información económica ─ */}
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-5 h-5 bg-nav rounded-md flex items-center justify-center text-white text-[10px] font-black">3</span>
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Información Económica</h2>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field
+                  label="Ingreso mensual (₲)"
+                  hint={form.ingreso > 0 ? `₲ ${parseInt(form.ingreso).toLocaleString('es-PY')}` : ''}
+                >
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm pointer-events-none">₲</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={form.ingreso}
+                      onChange={e => set('ingreso', e.target.value)}
+                      className="w-full pl-8 pr-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-mono text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-nav-lt focus:border-transparent"
+                    />
+                  </div>
+                </Field>
+                <Field label="Empleador / Nombre del negocio">
+                  <input
+                    type="text"
+                    placeholder="Empresa S.A. o nombre del negocio"
+                    value={form.empleador}
+                    onChange={e => set('empleador', e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-nav-lt focus:border-transparent"
+                  />
+                </Field>
+              </div>
+            </section>
+
+            {/* ─ Botón confirmar ─ */}
+            <div className={`flex items-center justify-between gap-4 flex-wrap rounded-2xl p-4 transition-colors ${
+              canSubmit ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white border border-gray-100'
+            }`}>
+              <div className="text-xs text-gray-400 leading-relaxed">
+                {!form.nombre.trim() || !form.ci.trim()
+                  ? '① Complete nombre y cédula del solicitante.'
+                  : !form.actividad || !form.banca
+                    ? '② Seleccione la actividad laboral y el tipo de banca.'
+                    : val && !val.ok && !override
+                      ? '③ Resuelva la inconsistencia de banca: cambie la banca o confirme la excepción.'
+                      : <span className="text-green-600 font-semibold">✓ Formulario completo. Listo para confirmar.</span>
+                }
+              </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className={`flex-shrink-0 px-8 py-3 rounded-xl font-bold text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nav-lt
+                  ${canSubmit
+                    ? 'bg-nav text-white hover:bg-nav-m shadow-lg hover:shadow-xl cursor-pointer'
+                    : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                  }`}
+              >
+                Confirmar Carpeta
+              </button>
+            </div>
+
+          </main>
+          )}
+
+          {/* ── FOOTER ── */}
+          <footer className="bg-nav py-3 px-6 text-center">
+            <p className="text-white/25 text-xs">
+              Sistema de Créditos · Módulo de Ingreso de Carpetas · 2026
+            </p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<FormularioCarpeta />);
+  </script>
+</body>
+</html>
