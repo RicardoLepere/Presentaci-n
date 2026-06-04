@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ecosistema de Procesos — NegoFIN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ng-verde':  '#1a7a4a',
+            'ng-oscuro': '#0d4a2e',
+            'ng-claro':  '#2da866',
+            'ng-suave':  '#e8f5ee',
+            'ng-medio':  '#c2e8d0',
+            'sidebar':   '#1e1f2b',
+            'sidebar-h': '#2a2b3d',
+          },
+          fontFamily: {
+            inter:      ['Inter','sans-serif'],
+            montserrat: ['Montserrat','sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { overflow-x: hidden; }
+    .sidebar-item { transition: background .15s, border-color .15s; }
+    .sidebar-item:hover { background: rgba(255,255,255,.07); }
+    .sidebar-item.active { background: rgba(255,255,255,.12); border-left: 3px solid var(--accent); }
+    .cell-truncate { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+  </style>
+</head>
+<body class="bg-gray-100 font-inter h-screen flex overflow-hidden">
+  <div id="root" class="flex w-full h-full overflow-hidden"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useCallback, useRef, useEffect } = React;
+
+    /* ─── DATA ─── */
+    const PROC     = [{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Vinculación de Cuentas - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"19","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Vinculación de Cuenta - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"7","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Verificación Remota","rs":"Gerencia Riesgo Crediticio","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"6","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Verificación Microempresa Formales e Informales","rs":"Gerencia Riesgo Crediticio","pa":19,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"141","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Verificación en Listas Internacionales","rs":"Unidad Cumplimiento PLD/FT","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"201","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Cumplimiento","pc":"Verificación en Listas Internacionales","rs":"Gerencia Comercial","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"140","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Verificación del Cliente PEP","rs":"Unidad Cumplimiento PLD/FT","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"5","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Verificación de Clientes Banca Consumo Profesional Independiente","rs":"Gerencia Riesgo Crediticio","pa":20,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"1","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Verificación Consumo Formales e Informales manual","rs":"Gerencia Riesgo Crediticio","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"2","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Verificación Consumo Formales e Informales automatico","rs":"Gerencia Riesgo Crediticio","pa":3,"pA":2,"pct":66.7,"cl":"Semiautomático","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"36","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Venta de Cartera","rs":"Gerencia Cobranzas","pa":23,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Venta de activos a colaboradores - Activo Fijo","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"95","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Venta de activos a colaboradores","rs":"Gerencia Administrativa","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Venta de activos a aliados comerciales - Activo Fijo","rs":"Gerencia TI","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"96","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Venta de activos a aliados comerciales","rs":"Gerencia Administrativa","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"64","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Caja Chica","pc":"Utilización y reposición de fondo de caja chica","rs":"Gerencia Financiera","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"83","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Gestión Jurídica","pc":"Usurpación de Identidad","rs":"Asesoria Jurídica","pa":18,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Uso y manteniiento de activos fijos - Activo Fijo","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"92","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Uso y manteniiento de activos fijos","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"101","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Administrativa","pc":"Uso del Seguro","rs":"Gerencia Administrativa","pa":25,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"127","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Tratamiento del Riesgo","rs":"Gerencia Riesgo Integral","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"147","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Personas y Cultura","pr":"Desarrollo de Personas","pc":"Trámites Internos","rs":"Gerencia RR.HH.","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"203","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Supervisión activa","pc":"Supervisión activa","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"12","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Supervisión activa","pc":"Supervisión activa","rs":"Gerencia Riesgo Crediticio","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Estratégico","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"43","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Supervisión activa","rs":"Gerencia Cobranzas","pa":11,"pA":1,"pct":9.1,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"156","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Solicitud de Soporte a TI","rs":"Gerencia TI","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"156","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Solicitud de Soporte a Producción","rs":"Gerencia TI","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"156","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Solicitud de Soporte a Infraestructura","rs":"Gerencia TI","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"156","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Solicitud de Soporte a Desarrollo GX","rs":"Gerencia TI","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"112","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Despagos y Aplicación de Cuotas","pc":"Solicitud de despagos de cobranzas","rs":"Gerencia Administrativa","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"113","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Despagos y Aplicación de Cuotas","pc":"Solicitud de despagos de bocas de cobranzas","rs":"Gerencia Administrativa","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"119","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión de Adquisiciones","pc":"Selección del proveedor","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"128","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Seguimiento y Revisión del Riesgo","rs":"Gerencia Riesgo Integral","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"165","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Gestión de Proyectos","pc":"Seguimiento y Reportes de Proyectos","rs":"Gerencia TI","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"154","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Desarrollo de Sistemas","pc":"Seguimiento del Desarrollo de Requerimientos - Solicitud de Requerimiento de Desarrollo","rs":"Gerencia TI","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"87","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Seguimiento de Hallazgos de Auditoria","rs":"Auditoría Interna","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"189","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Retiro de Equipo para Modalidad de Trabajo Remoto (Home Office)","rs":"Seguridad de la Información","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"189","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Retiro de Equipo de la Entidad","rs":"Seguridad de la Información","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"107","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Retención - Renta","rs":"Gerencia Administrativa","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"106","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Retención - IVA","rs":"Gerencia Administrativa","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"108","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Retención - IDU","rs":"Gerencia Administrativa","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"109","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Resolución general RG90","rs":"Gerencia Administrativa","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"62","ent":"NEGOFIN SA","tm":"Soporte","mp":"Custodio de Valores","pr":"Custodio de Valores","pc":"Resguardo de Documentos en Garantía de Fondos de Inversión","rs":"Gerencia Financiera","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"58","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión Financiera","pr":"Fondeo","pc":"Renovación de operaciones Pasivas del Sector No Financiero","rs":"Gerencia Financiera","pa":15,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"188","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Renovación de Licencias de Sistemas Informáticos","rs":"Seguridad de la Información","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"39","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Rendición de transferencias especiales","rs":"Gerencia Cobranzas","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUN","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"65","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Caja Chica","pc":"Rendición de caja chica","rs":"Gerencia Financiera","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"152","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Gestión de Atención al Cliente","pc":"Remisión de Archivos de Estadísticas y Reclamos","rs":"Gerencia Comercial","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"154","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Desarrollo de Sistemas","pc":"Relevamiento y Control de Desarrollo - Solicitud de Requerimiento de Desarrollo","rs":"Gerencia TI","pa":17,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"68","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Cheques","pc":"Regularización de cheques","rs":"Gerencia Financiera","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"130","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Registro e Informes del Riesgo","rs":"Gerencia Riesgo Integral","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"14","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Refinanciación de Deudas","rs":"Gerencia Riesgo Crediticio","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"193","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Procesos","pr":"Organización y Procesos","pc":"Rediseño de Estructura Organizacional - Organigramas","rs":"Gerencia Organización y Procesos","pa":16,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"114","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Recupero de Operaciones en Situación 500","rs":"Gerencia Administrativa","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"35","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Recompra de Cartera","rs":"Gerencia Cobranzas","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"144","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Personas y Cultura","pr":"Desarrollo de Personas","pc":"Reclutamiento y Selección de Personas","rs":"Gerencia RR.HH.","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"60","ent":"NEGOFIN SA","tm":"Primario","mp":"Adquisición de Cartera de Créditos","pr":"Custodio  de Valores","pc":"Recepción, Verificación y Resguardo de Valores","rs":"Gerencia Financiera","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"NOV","an":"Lorenzo","rm":"Arturo","tmj":"Req. TI  (SGC)"},{"id":"120","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión de Adquisiciones","pc":"Recepción de compras","rs":"Gerencia Administrativa","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"116","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Recepción Control y Guarda de Documentos","rs":"Gerencia Administrativa","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"181","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Protección Contra Software Malicioso","rs":"Seguridad de la Información","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"194","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Ventas","pc":"Prospección de clientes","rs":"Gerencia Comercial","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"149","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Personas y Cultura","pr":"Cultura Organizacional","pc":"Programas de Capacitación, Formación y Entrenamiento","rs":"Gerencia RR.HH.","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"59","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión Financiera","pr":"Fondeo","pc":"Préstamos de Entidades del Sector Financiero","rs":"Gerencia Financiera","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"174","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Planificación, Seguimiento y Control del Presupuesto","rs":"Gerencia Comercial","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"170","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Planificación, Ejecución, Desarrollo e Implementación - Gestión de Productos","rs":"Gerencia Comercial","pa":18,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"167","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Planificación, Ejecución y Desarrollo de Productos Nuevos - Metod. Crea. de Nuevos Prod.","rs":"Gerencia Comercial","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"78","ent":"NEGOFIN SA","tm":"Gestión","mp":"Planificación Estratégica","pr":"Planificación Estratégica","pc":"Planificación Estratégica","rs":"Directorio","pa":15,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"163","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Gestión de Proyectos","pc":"Planificación de Proyectos","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"89","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Planificación de Auditoria","rs":"Auditoría Interna","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"70","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Pagos de Intereses","rs":"Gerencia Financiera","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"75","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Pago por compensación de cartera","rs":"Gerencia Financiera","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"71","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Pago de prestamos bancarios","rs":"Gerencia Financiera","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"110","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Pago anticipo impuesto a la renta empresarial (IRE)","rs":"Gerencia Administrativa","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"74","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Pago a proveedores","rs":"Gerencia Financiera","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"72","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Pago a colaboradores nuevos","rs":"Gerencia Financiera","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"179","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa de Nómina","pr":"Compensación y Beneficios","pc":"Otorgamiento de Préstamo a Colaboradores","rs":"Gerencia RR.HH.","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"200","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Atención al cliente","pc":"Operaciones Refinanciadas","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"57","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión Financiera","pr":"Fondeo","pc":"Operaciones Pasivas del Sector No Financiero","rs":"Gerencia Financiera","pa":27,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"86","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Operaciones en Situación Irregular","rs":"Auditoría Interna","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"159","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Análisis de Datos e Información","pc":"Monitoreo y Mejora continua de los Modelos Predictivos","rs":"Gerencia TI","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"178","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Monitoreo Diario de Servicios de TI","rs":"Gerencia TI","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"170","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Monitoreo de Producto Implementado - Gestión de Productos","rs":"Gerencia Comercial","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"157","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Modificación de Usuarios en Base de Datos","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"51","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Back Office","pc":"Modificación de Situación del Cliente INH, CONV, y PRS","rs":"Gerencia Cobranzas","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"AGO","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"21","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Modificación de Operaciones - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Modificación de Operaciones - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"99","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Administrativa","pc":"Mantenimiento de Instalaciones","rs":"Gerencia Administrativa","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"177","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Mantenimiento de Equipos Informáticos","rs":"Gerencia TI","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"100","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Administrativa","pc":"Mantenimiento correctivo de instalaciones","rs":"Gerencia Administrativa","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"139","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Listas Restrictivas","rs":"Unidad Cumplimiento PLD/FT","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"105","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Liquidación de impuestos control mensual","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"104","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Liquidación de impuestos control diario","rs":"Gerencia Administrativa","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"188","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Licencias de Sistemas Informáticos","rs":"Seguridad de la Información","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"22","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Liberación de Operaciones - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Liberación de Operaciones - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"155","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Integración de Soporte al Entorno de Pruebas - Integ. Des. - Prod.","rs":"Gerencia TI","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"155","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Integración de Soporte al Entorno de Producción - Integ. Des. - Prod.","rs":"Gerencia TI","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"155","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Integración de Desarrollo al Entorno de Pruebas - Integ. Des. - Prod.","rs":"Gerencia TI","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"155","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Integración de Desarrollo al Entorno de Producción - Integ. Des. - Prod.","rs":"Gerencia TI","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"195","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Ventas","pc":"Inserción de operaciones","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"SEPT","an":"Scarley","rm":"Sabrina","tmj":"Solucred"},{"id":"142","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Inmovilización de Fondos y Activos Financieros","rs":"Unidad Cumplimiento PLD/FT","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"161","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Gestión de Proyectos","pc":"Inicio de Proyectos","rs":"Gerencia TI","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"115","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Informe para Entidades Controladoras","rs":"Gerencia Administrativa","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"67","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Cheques","pc":"Imputación de cheques en caución","rs":"Gerencia Financiera","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"111","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Control para Declaración de Impuestos","pc":"Impuesto a la renta empresarial (IRE)","rs":"Gerencia Administrativa","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"170","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Identificación, Evaluación y Selección de Propuestas - Gestión de Productos","rs":"Gerencia Comercial","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"167","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Identificación, Evaluación y Selección de Ideas - Metod. Crea. de Nuevos Prod.","rs":"Gerencia Comercial","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"143","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento Regulatorio","pc":"Identificación y Priorización de las Normas de Cumplimiento Regulatorio","rs":"Gerencia Riesgo Integral","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"124","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Identificación del Riesgo","rs":"Gerencia Riesgo Integral","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"25","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Habilitación de Usuarios para Bocas de Cobranzas","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"187","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Vulnerabilidades","rs":"Seguridad de la Información","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"153","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Gestión de Atención al Cliente","pc":"Gestión de Validación de Satisfacción del Cliente Post Desembolso","rs":"Gerencia Comercial","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"186","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Usuarios","rs":"Seguridad de la Información","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"173","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Gestión de Sitios Web","rs":"Gerencia Comercial","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"185","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Seguridad de Redes y Conexiones","rs":"Seguridad de la Información","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"172","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Gestión de Redes Sociales para Credi Ágil","rs":"Gerencia Comercial","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"171","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Gestión de Promoción Comercial para la Creación Dirigido a Vendedores - Gest. de Mkt. para AC","rs":"Gerencia Comercial","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"183","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Perfiles y Acceso de Sistema Informático","rs":"Seguridad de la Información","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"187","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Pentest","rs":"Seguridad de la Información","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"82","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Gestión Jurídica","pc":"Gestión de Oficios Judiciales y Notificaciones de Entes Reguladores","rs":"Asesoria Jurídica","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"138","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Gestión de Inserción de Listas en Sistema Informático","rs":"Unidad Cumplimiento PLD/FT","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"85","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Gestión de Informes y Comunicación de Hallazgos de Auditoria","rs":"Auditoría Interna","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"202","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Supervisión activa","pc":"Gestión de indicadores","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"171","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Gestión de Eventos para Retención de Colaboradores - Gest. de Mkt. para AC","rs":"Gerencia Comercial","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"81","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Gestión Jurídica","pc":"Gestión de Denuncias de Clientes en la SEDECO","rs":"Asesoria Jurídica","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"184","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Gestión de Contraseñas","rs":"Seguridad de la Información","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"151","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Gestión de Atención al Cliente","pc":"Gestión de Consultas y/o Reclamos","rs":"Gerencia Comercial","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"158","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Gestión de Consulta o Modificación en la Base de Datos","rs":"Gerencia TI","pa":17,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"42","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Gestión de cobro por sistema Débito","rs":"Gerencia Cobranzas","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUN","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"32","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Gestión de Cobranzas - Zona Metropolitana","rs":"Gerencia Cobranzas","pa":2,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"NOV","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"46","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Gestión de Cobranzas - Recaudadores","rs":"Gerencia Cobranzas","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"29","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Gestión de Cobranzas - Moonflow","rs":"Gerencia Cobranzas","pa":6,"pA":5,"pct":83.3,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"27","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Gestión de Cobranzas - Gestores","rs":"Gerencia Cobranzas","pa":9,"pA":2,"pct":22.2,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"28","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Gestión de Cobranzas - Chat Bot","rs":"Gerencia Cobranzas","pa":6,"pA":6,"pct":100.0,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"150","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Gestión de Atención al Cliente","pc":"Gestión de Clientes Registrados en Base No Molestar","rs":"Gerencia Comercial","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"171","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Marketing","pc":"Gestión de Campañas para Retención de Colaboradores - Gest. de Mkt. para AC","rs":"Gerencia Comercial","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"198","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Gestión de cajas","pc":"Gestión de cajas en sucursales","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"137","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Gestión de Alertas","rs":"Unidad Cumplimiento PLD/FT","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"160","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Análisis de Datos e Información","pc":"Generación, Almacenamiento y Automatización de Datos - Análisis de Datos e Información","rs":"Gerencia TI","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"159","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Análisis de Datos e Información","pc":"Generación de Modelos Predictivos","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"55","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión Financiera","pr":"Fondeo","pc":"Formalización y Actualización de Líneas de Crédito","rs":"Gerencia Financiera","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"73","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Pagos","pc":"Fondeo y desembolso","rs":"Gerencia Financiera","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"154","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Desarrollo de Sistemas","pc":"finalización del Desarrollo - Solicitud de Requerimiento de Desarrollo","rs":"Gerencia TI","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"76","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Tesorería","pc":"Extorno de Servicios","rs":"Gerencia Financiera","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"24","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Extorno","rs":"Gerencia Riesgo Crediticio","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"16","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Excepciones para el Área de In Situ","rs":"Gerencia Riesgo Crediticio","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"44","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Evaluación y Definición de Objetivos","rs":"Gerencia Cobranzas","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"126","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Evaluación del Riesgo","rs":"Gerencia Riesgo Integral","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"54","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Calidad de Cobranzas","pc":"Evaluación de la Calidad de la Gestión de Cobranzas","rs":"Gerencia Cobranzas","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"169","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Evaluación de Aliados Comerciales","rs":"Gerencia Comercial","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"53","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Capacitación y Entrenamiento","pc":"Escuela de Cobranzas","rs":"Gerencia Cobranzas","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"61","ent":"NEGOFIN SA","tm":"Soporte","mp":"Custodio de Valores","pr":"Custodio de Valores","pc":"Entrega de Documentos para Guarda y Destrucción","rs":"Gerencia Financiera","pa":22,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"80","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Gestión Jurídica","pc":"Emisión de Dictámenes","rs":"Asesoria Jurídica","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"79","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Gestión Jurídica","pc":"Elaboración y/o Revisión de Contratos","rs":"Asesoria Jurídica","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"190","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Procesos","pr":"Organización y Procesos","pc":"Elaboración y/o Actualización de Procedimientos","rs":"Gerencia Organización y Procesos","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"191","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Procesos","pr":"Elaboración y/o Actualización de Documentos","pc":"Elaboración y/o Actualización de politicas, reglamentos, planes y manuales","rs":"Gerencia Organización y Procesos","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"192","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Procesos","pr":"Elaboración y/o Actualización de Documentos","pc":"Elaboración y/o Actualización de instructivos y formularios","rs":"Gerencia Organización y Procesos","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"162","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Gestión de Proyectos","pc":"Ejecución de Proyectos","rs":"Gerencia TI","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"88","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Ejecución de Auditoria","rs":"Auditoría Interna","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Donación de activos fijos - Activo Fijo","rs":"Gerencia TI","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"97","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Donación de activos fijos","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"84","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Auditoría","pr":"Auditoría Interna","pc":"Documentación de la Evidencia de Auditoria","rs":"Auditoría Interna","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"49","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Back Office","pc":"Devolución por Débito Solicitado por Cliente - Back Office","rs":"Gerencia Cobranzas","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"63","ent":"NEGOFIN SA","tm":"Soporte","mp":"Custodio de Valores","pr":"Custodio de Valores","pc":"Devolución de Pagares Cancelados","rs":"Gerencia Financiera","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"NOV","an":"Lorenzo","rm":"Arturo","tmj":"Req. TI  (SGC)"},{"id":"146","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Personas y Cultura","pr":"Desarrollo de Personas","pc":"Desvinculación del Personal","rs":"Gerencia RR.HH.","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Destrucción de activos Fijos - Activo Fijo","rs":"Gerencia TI","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"94","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Destrucción de activos Fijos","rs":"Gerencia Administrativa","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"197","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Desembolso","pc":"Desembolso de créditos funcionario","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Reducción de tiempo","rop":"En proceso","fe":"OCT","an":"Scarley","rm":"Jessica","tmj":"Ajuste procedimiento"},{"id":"196","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Desembolso","pc":"Desembolso de créditos - IN SITU","rs":"Gerencia Comercial","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Reducción de tiempo","rop":"En proceso","fe":"NOV","an":"Scarley","rm":"Jessica","tmj":"Req. TI  (SGC)"},{"id":"196","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de la Relación con el Cliente Final","pr":"Desembolso","pc":"Desembolso de créditos","rs":"Gerencia Comercial","pa":17,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Reducción de tiempo","rop":"En proceso","fe":"NOV","an":"Scarley","rm":"Jessica","tmj":"Req. TI  (SGC)"},{"id":"180","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa de Nómina","pr":"Compensación y Beneficios","pc":"Descuentos y Pago de Salario","rs":"Gerencia RR.HH.","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"154","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Desarrollo de Sistemas","pc":"Desarrollo de Sistema - Solicitud de Requerimiento de Desarrollo","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"123","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Alcance, Contexto y Criterios de Riesgos","pc":"Definición de Alcance, Contexto y Criterios de Riesgos","rs":"Gerencia Riesgo Integral","pa":12,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"136","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Debida Diligencia de Clientes de Compra de Cartera Micro Créditos","rs":"Unidad Cumplimiento PLD/FT","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"23","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Creación de ficha de Informconf - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"Reducción de tiempo","rop":"En proceso","fe":"NOV","an":"Lorenzo","rm":"Jessica","tmj":"Req. TI  (SGC)"},{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Creación de Ficha de Informconf - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"166","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Gestión de Experiencia del Cliente","pc":"Costumer Journey","rs":"Gerencia Comercial","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"50","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Back Office","pc":"Control de Rendición de Cobros del Gestor Externo - Back Office","rs":"Gerencia Cobranzas","pa":2,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"15","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Control de Observaciones de Cartera Adquirida","rs":"Gerencia Riesgo Crediticio","pa":5,"pA":1,"pct":20.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"77","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Tesorería","pc":"Control de Liquidez y Líneas de Créditos","rs":"Gerencia Financiera","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"145","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Personas y Cultura","pr":"Desarrollo de Personas","pc":"Contratación e Inducción a Colaboradores","rs":"Gerencia RR.HH.","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"133","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Conocimiento del Colaborador","rs":"Unidad Cumplimiento PLD/FT","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"135","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Conocimiento de Proveedores","rs":"Unidad Cumplimiento PLD/FT","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"134","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Conocimiento de Otorgante de Préstamo","rs":"Unidad Cumplimiento PLD/FT","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"132","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Conocimiento de Aliados Comerciales","rs":"Unidad Cumplimiento PLD/FT","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"66","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Cheques","pc":"Confirmación de cheques en caución","rs":"Gerencia Financiera","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"117","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Configuración de Facturación Autoimpresa o Electrónica","rs":"Gerencia Administrativa","pa":18,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"103","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Conciliaciones de cuentas transitorias","rs":"Gerencia Administrativa","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"102","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Contable","pc":"Conciliaciones","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"129","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Comunicación y Consulta del Riesgo","rs":"Gerencia Riesgo Integral","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"122","ent":"NEGOFIN SA","tm":"Gestión","mp":"Planificación Estratégica","pr":"Comunicación Interna y Externa","pc":"Comunicación Interna y Externa","rs":"Gerencia General","pa":1,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"98","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión Administrativa","pc":"Comunicación de las Cancelaciones Anticipadas y Consolidadas a la Entidad Aseguradora","rs":"Gerencia Administrativa","pa":2,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"168","ent":"NEGOFIN SA","tm":"Primario","mp":"Investigación de Mercado y Desarrollo de Productos y Canales","pr":"Gestión de Productos, Servicios y Alianzas Comerciales","pc":"Compra de Cartera - Empresa Cedente","rs":"Gerencia Comercial","pa":27,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"90","ent":"NEGOFIN SA","tm":"Primario","mp":"Adquisición de Cartera de Créditos","pr":"Compensación de Cartera","pc":"Compensación por Compra de Cartera","rs":"Gerencia Administrativa","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"38","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Cobro via transferencia y/o deposito bancario","rs":"Gerencia Cobranzas","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUN","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"37","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Cobro de Créditos con Cheque al dia o efectivo","rs":"Gerencia Cobranzas","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUL","an":"Tania","rm":"Sebastián","tmj":""},{"id":"40","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Cobro con cheque diferido - entrega en sucursal","rs":"Gerencia Cobranzas","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUL","an":"Tania","rm":"Sebastián","tmj":""},{"id":"41","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Gestión de Cobros de Créditos","pc":"Cobro con cheque diferido - entrega a gestor","rs":"Gerencia Cobranzas","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"JUL","an":"Tania","rm":"Sebastián","tmj":""},{"id":"164","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Gestión de Proyectos","pc":"Cierre de Proyectos","rs":"Gerencia TI","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"69","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Tesorería","pr":"Manejo de Cheques","pc":"Cheques devueltos codigo 405","rs":"Gerencia Financiera","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"18","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Carga de Solicitud de Crédito de Colaboradores de Aliados Comerciales - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Carga de Solicitud de Crédito de Colaboradores - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"52","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Capacitación y Entrenamiento","pc":"Capacitación y Entrenamiento","rs":"Gerencia Cobranzas","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"131","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Cumplimiento y PLD","pr":"Cumplimiento PLD/FT","pc":"Cancelación Anticipada de Prestamos","rs":"Unidad Cumplimiento PLD/FT","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"45","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Calculo y Pago de Comisiones","rs":"Gerencia Cobranzas","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"48","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Back Office","pc":"Búsqueda de Datos de Clientes Inubicables - Back Office","rs":"Gerencia Cobranzas","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Tania","rm":"Sebastián","tmj":"RPA"},{"id":"176","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Baja y Modificación de Servidores de TI - ABM de Servidores","rs":"Gerencia TI","pa":18,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"157","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Baja de Usuarios en Base de Datos","rs":"Gerencia TI","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Baja de activos Fijos - Activo Fijo","rs":"Gerencia TI","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"93","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Baja de activos Fijos","rs":"Gerencia Administrativa","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"118","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión de Adquisiciones","pc":"Autorización extraordinaria para compras no presupuestadas","rs":"Gerencia Administrativa","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"17","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Autorización de Operaciones Condicionadas para Desembolso","rs":"Gerencia Riesgo Crediticio","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"182","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión de Seguridad de la Información","pr":"Seguridad de la Información","pc":"Autorización de Acceso a Colaboradores Externos a la Sala de Servidores","rs":"Seguridad de la Información","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"47","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Back Office","pc":"Atención de Llamadas - Back Office","rs":"Gerencia Cobranzas","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"SI","fe":"AGO","an":"Tania","rm":"Sebastián","tmj":"Solucred"},{"id":"26","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Asistencia a Cajeros de Aliados Comerciales","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"3","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Verificaciones","pc":"Asignación de operaciones verificaciones","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":4,"pct":100.0,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"11","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Asignación de operaciones reconsideraciones","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":4,"pct":100.0,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"30","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Asignación de operaciones de Cobranzas","rs":"Gerencia Cobranzas","pa":11,"pA":1,"pct":9.1,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"NOV","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"4","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Análisis Crediticio","pc":"Asignación de operaciones analisis","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":4,"pct":100.0,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"AGO","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"31","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Asignación de Gestión de Cobranzas Externas - Zona Interior","rs":"Gerencia Cobranzas","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"Mejorar la calidad","rop":"En proceso","fe":"NOV","an":"Tania","rm":"Sebastián","tmj":"Req. TI  (SGC)"},{"id":"34","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Aplicación de descuentos por cancelación anticipada","rs":"Gerencia Cobranzas","pa":8,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"33","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión Integral de la Cartera (Cobranzas)","pr":"Cobranzas","pc":"Aplicación de Descuentos de cargos por mora","rs":"Gerencia Cobranzas","pa":7,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"20","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Operaciones","pc":"Anulación de Operaciones - Asistencia Operativa","rs":"Gerencia Riesgo Crediticio","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"199","ent":"ALIADOS COMERCIALES","tm":"Primario","mp":"Gestión de Aliados Comerciales","pr":"Asistencia operativa para aliados comerciales","pc":"Anulación de Operaciones - Asist. Oper. para AC","rs":"Gerencia Comercial","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"125","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión de Riesgo Integral","pr":"Apreciación y Tratamiento del Riesgo","pc":"Análisis del Riesgo","rs":"Gerencia Riesgo Integral","pa":4,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"13","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Reconsideraciones","pc":"Análisis de reconsideraciones","rs":"Gerencia Riesgo Crediticio","pa":9,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Soporte","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"10","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Análisis Crediticio","pc":"Analisis de creditos BNF","rs":"Gerencia Riesgo Crediticio","pa":4,"pA":4,"pct":100.0,"cl":"Automático","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"9","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Análisis Crediticio","pc":"Análisis Crediticio banca microempresa","rs":"Gerencia Riesgo Crediticio","pa":13,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"JUL","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"8","ent":"NEGOFIN SA","tm":"Primario","mp":"Análisis y Evaluación de Solicitudes","pr":"Análisis Crediticio","pc":"Análisis Crediticio banca consumo","rs":"Gerencia Riesgo Crediticio","pa":10,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Alta","tp":"Operativo","im":"Reducción costos","rop":"SI","fe":"JUL","an":"Lorenzo","rm":"Sabrina","tmj":"Solucred"},{"id":"157","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Producción","pc":"Alta de Usuarios en Base de Datos","rs":"Gerencia TI","pa":14,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"176","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Alta de Servidores de TI - ABM de Servidores","rs":"Gerencia TI","pa":22,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"175","ent":"NEGOFIN SA","tm":"Soporte","mp":"Soporte de TI","pr":"Gestión de Infraestructura","pc":"Alta de activos fijos - Activo Fijo","rs":"Gerencia TI","pa":11,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"91","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Activo Fijo","pc":"Alta de activos fijos","rs":"Gerencia Administrativa","pa":3,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"121","ent":"NEGOFIN SA","tm":"Soporte","mp":"Gestión Administrativa y Contable","pr":"Gestión de Adquisiciones","pc":"Adquisiciones y Contratación de Servicios","rs":"Gerencia Administrativa","pa":5,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Bajo","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"160","ent":"NEGOFIN SA","tm":"Primario","mp":"Gestión de la Tecnología e Innovación Aplicada","pr":"Análisis de Datos e Información","pc":"Actualización y Mantenimiento de Datos - Análisis de Datos e Información","rs":"Gerencia TI","pa":2,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"56","ent":"NEGOFIN SA","tm":"Gestión","mp":"Gestión Financiera","pr":"Fondeo","pc":"Actualización de Líneas de Crédito","rs":"Gerencia Financiera","pa":6,"pA":0,"pct":0.0,"cl":"Manual","oe":"EFICIENCIA","pri":"Medio","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"","ent":"","tm":"","mp":"","pr":"","pc":"","rs":"","pa":null,"pA":null,"pct":0,"cl":"Manual","oe":"","pri":"","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""},{"id":"","ent":"","tm":"","mp":"","pr":"","pc":"","rs":"","pa":null,"pA":null,"pct":0,"cl":"Manual","oe":"","pri":"","tp":"","im":"","rop":"","fe":"","an":"","rm":"","tmj":""}];
+    const COB_BD   = [{"id":67,"pc":"Gestión de Cobranzas gestores","pa":15,"pA":12,"cl":"Automático"},{"id":null,"pc":"Gestión de Cobranzas bot","pa":3,"pA":3,"cl":"Automático"},{"id":68,"pc":"Asignación de Operaciones","pa":18,"pA":7,"cl":"Manual"},{"id":69,"pc":"Gestión de Cobranzas Zona Interna","pa":17,"pA":12,"cl":"Semiautomático"},{"id":70,"pc":"Aplicación de Descuentos","pa":5,"pA":4,"cl":"Semiautomático"},{"id":71,"pc":"Recompra de Cartera","pa":12,"pA":8,"cl":"Semiautomático"},{"id":72,"pc":"Venta de Cartera","pa":15,"pA":10,"cl":"Semiautomático"},{"id":73,"pc":"Gestión de Cobros de Créditos","pa":11,"pA":10,"cl":"Manual"},{"id":74,"pc":"Cobro por Sistema de Débitos","pa":11,"pA":9,"cl":"Semiautomático"},{"id":75,"pc":"Evaluación y Def. de Objetivos","pa":7,"pA":6,"cl":"Semiautomático"},{"id":76,"pc":"Cálculo y Pago de Comisiones","pa":13,"pA":13,"cl":"Semiautomático"},{"id":77,"pc":"Gestión de Cobranzas con Recaud.","pa":12,"pA":11,"cl":"Semiautomático"},{"id":78,"pc":"Back Office","pa":14,"pA":13,"cl":"Manual"},{"id":79,"pc":"Modificación de Situación","pa":15,"pA":13,"cl":"Semiautomático"},{"id":80,"pc":"Capacitación y Entrenamiento","pa":7,"pA":6,"cl":"Manual"},{"id":81,"pc":"Escuela de Cobranzas","pa":6,"pA":5,"cl":"Semiautomático"},{"id":82,"pc":"Evaluación de la Calidad","pa":9,"pA":8,"cl":"Semiautomático"}];
+    const IND_COB  = {"total_procesos":21,"manual_semi":16,"obj_mejora_anual":0.25,"cant_pro_mejora":4,"meses":[{"mes":"Enero","mejorados":0,"acumulado":0,"objetivo":0.5},{"mes":"Febrero","mejorados":0,"acumulado":0,"objetivo":0.5},{"mes":"Marzo","mejorados":1,"acumulado":1,"objetivo":1.5},{"mes":"Abril","mejorados":0,"acumulado":1,"objetivo":1.5},{"mes":"Mayo","mejorados":1,"acumulado":2,"objetivo":1.5},{"mes":"Junio","mejorados":0,"acumulado":2,"objetivo":2},{"mes":"Julio","mejorados":0,"acumulado":2,"objetivo":2},{"mes":"Agosto","mejorados":1,"acumulado":3,"objetivo":2.5},{"mes":"Setiembre","mejorados":0,"acumulado":3,"objetivo":3},{"mes":"Octubre","mejorados":0,"acumulado":3,"objetivo":3.5},{"mes":"Noviembre","mejorados":1,"acumulado":4,"objetivo":3.5}]};
+    const RG       = [{"prioridad":"Alta","responsable":"Gerencia Comercial","procs":34,"pasos":239},{"prioridad":"Alta","responsable":"Gerencia Cobranzas","procs":28,"pasos":221},{"prioridad":"Alta","responsable":"Gerencia Riesgo Crediticio","procs":26,"pasos":189},{"prioridad":"Medio","responsable":"Gerencia Financiera","procs":23,"pasos":200},{"prioridad":"Medio","responsable":"Seguridad de la Información","procs":12,"pasos":107},{"prioridad":"Medio","responsable":"Gerencia TI","procs":9,"pasos":60},{"prioridad":"Bajo","responsable":"Gerencia Administrativa","procs":32,"pasos":250},{"prioridad":"Bajo","responsable":"Gerencia TI","procs":27,"pasos":246},{"prioridad":"Bajo","responsable":"Unidad Cumplimiento PLD/FT","procs":12,"pasos":89},{"prioridad":"Bajo","responsable":"Gerencia Riesgo Integral","procs":9,"pasos":60},{"prioridad":"Bajo","responsable":"Auditoría Interna","procs":6,"pasos":55},{"prioridad":"Bajo","responsable":"Gerencia Organización y Procesos","procs":4,"pasos":52},{"prioridad":"Bajo","responsable":"Asesoria Jurídica","procs":5,"pasos":45},{"prioridad":"Bajo","responsable":"Gerencia RR.HH.","procs":7,"pasos":33},{"prioridad":"Bajo","responsable":"Directorio","procs":1,"pasos":15},{"prioridad":"Bajo","responsable":"Gerencia General","procs":1,"pasos":1}];
+    const TD_NEGO  = {"macroprocesos":20,"procesos":38,"procedimientos":140};
+
+    /* ─── HELPERS ─── */
+    const uniq = (arr, fn) => [...new Set(arr.map(fn).filter(Boolean))].sort();
+
+    const CLASE_CFG = {
+      'Automático':    { bg:'bg-green-100',  text:'text-green-800',  dot:'bg-green-500',  bar:'bg-green-500',  hex:'#22c55e' },
+      'Semiautomático':{ bg:'bg-blue-100',   text:'text-blue-800',   dot:'bg-blue-500',   bar:'bg-blue-400',   hex:'#60a5fa' },
+      'Manual':        { bg:'bg-amber-100',  text:'text-amber-800',  dot:'bg-amber-500',  bar:'bg-amber-400',  hex:'#fbbf24' },
+    };
+    const PRIO_CFG = {
+      'Alta':  { bg:'bg-red-50',    text:'text-red-700',    bdr:'border-red-200',    dot:'bg-red-500'    },
+      'Medio': { bg:'bg-yellow-50', text:'text-yellow-700', bdr:'border-yellow-200', dot:'bg-yellow-500' },
+      'Bajo':  { bg:'bg-slate-50',  text:'text-slate-600',  bdr:'border-slate-200',  dot:'bg-slate-400'  },
+    };
+    const TIPO_CFG = {
+      'Primario': { bg:'bg-violet-100', text:'text-violet-800', side:'bg-violet-500', hex:'#8b5cf6' },
+      'Soporte':  { bg:'bg-sky-100',    text:'text-sky-800',    side:'bg-sky-500',    hex:'#0ea5e9' },
+      'Gestión':  { bg:'bg-teal-100',   text:'text-teal-800',   side:'bg-teal-500',   hex:'#14b8a6' },
+    };
+
+    const cc = cl => CLASE_CFG[cl] || CLASE_CFG['Manual'];
+    const pc = p  => PRIO_CFG[p]  || PRIO_CFG['Bajo'];
+    const tc = t  => TIPO_CFG[t]  || {bg:'bg-gray-100',text:'text-gray-700',side:'bg-gray-400',hex:'#9ca3af'};
+
+    const Pill = ({label, cfg, small}) => (
+      <span className={`inline-flex items-center gap-1 font-semibold rounded-full border ${cfg.bdr||''} ${cfg.bg} ${cfg.text} ${small?'text-[9px] px-1.5 py-0':'text-[10px] px-2 py-0.5'}`}>
+        {cfg.dot && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`}/>}
+        {label}
+      </span>
+    );
+
+    const AutoBar = ({man=0,semi=0,aut=0,total=1,h='h-1.5'}) => (
+      <div className={`${h} rounded-full bg-gray-200 overflow-hidden flex`}>
+        <div className="h-full bg-amber-400"  style={{width:`${(man/total)*100}%`}}/>
+        <div className="h-full bg-blue-400"   style={{width:`${(semi/total)*100}%`}}/>
+        <div className="h-full bg-green-500"  style={{width:`${(aut/total)*100}%`}}/>
+      </div>
+    );
+
+    /* ─── SIDEBAR NAV ─── */
+    const NAV = [
+      { group: 'DASHBOARDS', items: [
+        { id:'td',          label:'Resumen General',     icon:'▦', color:'#1a7a4a', sheet:'TD' },
+        { id:'gerencia',    label:'Resumen Gerencia',    icon:'◉', color:'#dc2626', sheet:'Resumen Gerencia' },
+      ]},
+      { group: 'ECOSISTEMA', items: [
+        { id:'eco-nego',    label:'Ecosistema Negofin',  icon:'⬡', color:'#7c3aed', sheet:'Ecosistema - Nego' },
+        { id:'eco-resp',    label:'Por Responsable',     icon:'◎', color:'#2563eb', sheet:'Ecosistema - Responsables' },
+        { id:'eco-macro',   label:'Por Macroproceso',    icon:'◈', color:'#d97706', sheet:'Ecosistema - Macros' },
+      ]},
+      { group: 'DATOS', items: [
+        { id:'bd',          label:'Base de Datos',       icon:'☰', color:'#0891b2', sheet:'BD' },
+        { id:'procesos',    label:'Procesos',            icon:'≡', color:'#ea580c', sheet:'Procesos' },
+      ]},
+      { group: 'AUTOMATIZACIÓN', items: [
+        { id:'aut-resp',    label:'TD — Eco. Respon.',   icon:'◑', color:'#6366f1', sheet:'TD - Eco. Respon.' },
+        { id:'aut-macro',   label:'TD — Eco. Macro',    icon:'◐', color:'#8b5cf6', sheet:'TD - Eco. Macro' },
+      ]},
+      { group: 'INDICADORES', items: [
+        { id:'cobranzas',   label:'Ind. Cobranzas',      icon:'↑', color:'#16a34a', sheet:'Ind. Cobranzas' },
+      ]},
+    ];
+
+    const ALL_ITEMS = NAV.flatMap(g => g.items);
+
+    /* ═══════════════════════════════
+       SECTION: TD — Resumen General
+    ═══════════════════════════════ */
+    function SectionTD() {
+      const total   = PROC.length;
+      const manual  = PROC.filter(r=>r.cl==='Manual').length;
+      const semi    = PROC.filter(r=>r.cl==='Semiautomático').length;
+      const auto    = PROC.filter(r=>r.cl==='Automático').length;
+
+      const tdRows = [
+        {label:'Tipo de Macro',  neg:'NEGOFIN SA',col:'—'},
+        {label:'Macroprocesos',  neg:TD_NEGO.macroprocesos, col:'—'},
+        {label:'Procesos',       neg:TD_NEGO.procesos,      col:'—'},
+        {label:'Procedimientos', neg:TD_NEGO.procedimientos,col:'—'},
+      ];
+
+      const areaRows = [
+        {area:'Gerencia Comercial',           procs:17},
+        {area:'Gerencia Cobranzas',           procs:17},
+        {area:'Gerencia Riesgo Crediticio',   procs:14},
+        {area:'Gerencia Administrativa',      procs:13},
+        {area:'Unidad Cumplimiento PLD/FT',   procs:12},
+        {area:'Gerencia Financiera',          procs:12},
+        {area:'Seguridad de la Información',  procs:9},
+        {area:'Gerencia TI',                  procs:9},
+        {area:'Gerencia Riesgo Integral',     procs:9},
+        {area:'Gerencia RR.HH.',              procs:8},
+        {area:'Auditoría Interna',            procs:6},
+        {area:'Asesoria Jurídica',            procs:5},
+        {area:'Gerencia Innovación y Proy.',  procs:4},
+        {area:'Gerencia Organización y Proc.',procs:3},
+        {area:'Directorio',                   procs:1},
+        {area:'Gerencia General',             procs:1},
+      ];
+      const maxP = Math.max(...areaRows.map(r=>r.procs));
+
+      return (
+        <div className="space-y-6">
+          {/* KPI cards */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            {[
+              {label:'Macroprocesos', val:TD_NEGO.macroprocesos, sub:'NEGOFIN SA',      color:'bg-ng-oscuro', icon:'⬡'},
+              {label:'Procesos',      val:TD_NEGO.procesos,      sub:'NEGOFIN SA',      color:'bg-ng-verde',  icon:'⬢'},
+              {label:'Procedimientos',val:TD_NEGO.procedimientos,sub:'Solo NEGOFIN SA', color:'bg-ng-claro',  icon:'⬟'},
+              {label:'Total Sistema', val:total,                 sub:'+ Aliados Com.',  color:'bg-emerald-700',icon:'◎'},
+            ].map(k=>(
+              <div key={k.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className={`px-5 py-4 ${k.color} text-white`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">{k.label}</div>
+                      <div className="font-montserrat font-black text-4xl leading-none">{k.val}</div>
+                    </div>
+                    <span className="text-3xl opacity-30">{k.icon}</span>
+                  </div>
+                </div>
+                <div className="px-5 py-2 text-[10px] text-gray-400 font-medium">{k.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Automatización */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Nivel de Automatización — Total Sistema</h3>
+            <AutoBar man={manual} semi={semi} aut={auto} total={total} h="h-4"/>
+            <div className="flex flex-wrap gap-6 mt-4">
+              {[
+                {label:'Manual',        count:manual, pct:((manual/total)*100).toFixed(1), bar:'bg-amber-400'},
+                {label:'Semiautomático',count:semi,   pct:((semi/total)*100).toFixed(1),   bar:'bg-blue-400'},
+                {label:'Automático',    count:auto,   pct:((auto/total)*100).toFixed(1),   bar:'bg-green-500'},
+              ].map(c=>(
+                <div key={c.label} className="flex items-center gap-2.5">
+                  <span className={`w-3 h-3 rounded ${c.bar}`}/>
+                  <span className="text-sm font-semibold text-gray-700">{c.label}</span>
+                  <span className="font-montserrat font-black text-lg text-gray-900">{c.count}</span>
+                  <span className="text-xs text-gray-400">({c.pct}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tabla TD */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Resumen NEGOFIN */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-2 h-5 bg-ng-verde rounded-full"/>
+                <h3 className="font-bold text-sm text-gray-800">NEGOFIN SA — Jerarquía</h3>
+              </div>
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-gray-50">
+                  {[
+                    {label:'Tipo de Macro',   val:'20 tipos',  note:'Primario · Soporte · Gestión'},
+                    {label:'Macroprocesos',   val:TD_NEGO.macroprocesos, note:'Grupos de procesos'},
+                    {label:'Procesos',        val:TD_NEGO.procesos,      note:'Agrupaciones'},
+                    {label:'Procedimientos',  val:TD_NEGO.procedimientos,note:'Flujos documentados'},
+                  ].map(r=>(
+                    <tr key={r.label} className="hover:bg-gray-50">
+                      <td className="px-5 py-3 text-gray-500">{r.label}</td>
+                      <td className="px-5 py-3 font-montserrat font-black text-xl text-ng-oscuro text-right">{r.val}</td>
+                      <td className="px-5 py-3 text-[10px] text-gray-400 text-right">{r.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Procedimientos por área */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-2 h-5 bg-red-500 rounded-full"/>
+                <h3 className="font-bold text-sm text-gray-800">Procedimientos por Área (Gerencia)</h3>
+              </div>
+              <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
+                {areaRows.map((r,i)=>(
+                  <div key={i} className="px-5 py-2.5 hover:bg-gray-50 flex items-center gap-3">
+                    <span className="text-xs text-gray-400 w-4 text-right flex-shrink-0">{i+1}</span>
+                    <span className="text-sm text-gray-700 flex-1 truncate">{r.area}</span>
+                    <div className="w-24 flex-shrink-0">
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-ng-verde rounded-full" style={{width:`${(r.procs/maxP)*100}%`}}/>
+                      </div>
+                    </div>
+                    <span className="font-bold text-sm text-ng-oscuro w-5 text-right flex-shrink-0">{r.procs}</span>
+                  </div>
+                ))}
+                <div className="px-5 py-2.5 bg-ng-suave flex items-center justify-between">
+                  <span className="text-xs font-bold text-ng-oscuro uppercase tracking-wide">Total general</span>
+                  <span className="font-montserrat font-black text-ng-oscuro">140</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Resumen Gerencia
+    ═══════════════════════════════ */
+    function SectionGerencia() {
+      const groups = ['Alta','Medio','Bajo'];
+      return (
+        <div className="space-y-4">
+          {groups.map(prio=>{
+            const rows = RG.filter(r=>r.prioridad===prio);
+            const sub  = rows.reduce((s,r)=>s+r.procs,0);
+            const subP = rows.reduce((s,r)=>s+r.pasos,0);
+            const maxP = Math.max(...rows.map(r=>r.procs),1);
+            const cfg  = pc(prio);
+            return (
+              <div key={prio} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className={`px-6 py-3 flex items-center justify-between ${cfg.bg} border-b ${cfg.bdr}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dot}`}/>
+                    <span className={`font-montserrat font-black text-sm ${cfg.text}`}>Prioridad {prio.toUpperCase()}</span>
+                    <span className={`text-xs font-semibold ${cfg.text} opacity-60`}>{rows.length} gerencias</span>
+                  </div>
+                  <div className={`text-xs font-bold ${cfg.text}`}>{sub} proc. · {subP} pasos</div>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-2 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gerencia / Responsable</th>
+                      <th className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Procedimientos</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pasos</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {rows.map((r,i)=>(
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-3 text-gray-300 text-xs">{i+1}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{r.responsable}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 max-w-[120px]">
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${cfg.dot}`} style={{width:`${(r.procs/maxP)*100}%`}}/>
+                              </div>
+                            </div>
+                            <span className="font-bold text-gray-900 w-6 text-right">{r.procs}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-gray-500">{r.pasos}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className={`border-t ${cfg.bdr} ${cfg.bg}`}>
+                      <td colSpan={2} className={`px-6 py-2 text-xs font-black uppercase tracking-wide ${cfg.text}`}>Total {prio}</td>
+                      <td className={`px-4 py-2 font-black text-right text-sm ${cfg.text}`}>{sub}</td>
+                      <td className={`px-4 py-2 font-bold text-right font-mono text-sm ${cfg.text}`}>{subP}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            );
+          })}
+          {/* Total general */}
+          <div className="bg-ng-oscuro rounded-2xl px-6 py-4 flex items-center justify-between text-white">
+            <span className="font-montserrat font-black text-sm uppercase tracking-wider">Total General</span>
+            <div className="flex items-center gap-8">
+              <div className="text-right">
+                <div className="text-[10px] opacity-50 uppercase tracking-wider">Procedimientos</div>
+                <div className="font-montserrat font-black text-2xl">{RG.reduce((s,r)=>s+r.procs,0)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] opacity-50 uppercase tracking-wider">Pasos</div>
+                <div className="font-montserrat font-black text-2xl">{RG.reduce((s,r)=>s+r.pasos,0)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Ecosistema Negofin
+    ═══════════════════════════════ */
+    function SectionEcoNego() {
+      const [fEnt, setFEnt] = useState('Todos');
+      const entidades = ['Todos','NEGOFIN SA','ALIADOS COMERCIALES'];
+
+      const filtered = useMemo(()=> fEnt==='Todos' ? PROC : PROC.filter(r=>r.ent===fEnt), [fEnt]);
+
+      // Group by tipo, then macro
+      const byTipo = useMemo(()=>{
+        const map = {};
+        filtered.forEach(r=>{
+          if(!r.tm || !r.mp) return;
+          if(!map[r.tm]) map[r.tm]={manual:0,semi:0,auto:0,macros:{}};
+          if(!map[r.tm].macros[r.mp]) map[r.tm].macros[r.mp]={manual:0,semi:0,auto:0,procs:0};
+          map[r.tm].macros[r.mp].procs++;
+          if(r.cl==='Manual') { map[r.tm].manual++; map[r.tm].macros[r.mp].manual++; }
+          else if(r.cl==='Semiautomático') { map[r.tm].semi++; map[r.tm].macros[r.mp].semi++; }
+          else { map[r.tm].auto++; map[r.tm].macros[r.mp].auto++; }
+        });
+        return Object.entries(map).map(([tipo,st])=>({
+          tipo, ...st,
+          total: st.manual+st.semi+st.auto,
+          macros: Object.entries(st.macros).map(([mp,ms])=>({
+            mp, ...ms,
+            total: ms.manual+ms.semi+ms.auto,
+          })).sort((a,b)=>b.total-a.total),
+        })).sort((a,b)=>{const o={Primario:0,Gestión:1,Soporte:2};return (o[a.tipo]??3)-(o[b.tipo]??3);});
+      },[filtered]);
+
+      return (
+        <div className="space-y-4">
+          {/* Filtro */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Entidad:</span>
+            {entidades.map(e=>(
+              <button key={e} onClick={()=>setFEnt(e)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                  fEnt===e ? 'bg-ng-oscuro text-white border-ng-oscuro shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-ng-claro'
+                }`}>{e==='Todos' ? 'Todas las entidades' : e}</button>
+            ))}
+            <span className="text-xs text-gray-400 ml-auto">{filtered.length} procedimientos</span>
+          </div>
+
+          {/* Leyenda */}
+          <div className="flex items-center gap-1 px-1 flex-wrap">
+            {Object.entries(CLASE_CFG).map(([k,v])=>(
+              <span key={k} className="flex items-center gap-1 text-xs text-gray-500 mr-3">
+                <span className={`w-2.5 h-2.5 rounded ${v.bar}`}/>{k}
+              </span>
+            ))}
+          </div>
+
+          {/* Grid por tipo */}
+          {byTipo.map(t=>{
+            const cfg = tc(t.tipo);
+            return (
+              <div key={t.tipo} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className={`px-6 py-3 flex items-center justify-between ${cfg.bg} border-b`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`w-1 h-8 rounded-full ${cfg.side}`}/>
+                    <span className={`font-montserrat font-black text-base ${cfg.text}`}>{t.tipo}</span>
+                    <span className={`text-xs font-semibold ${cfg.text} opacity-60`}>{t.macros.length} macroprocesos</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <AutoBar man={t.manual} semi={t.semi} aut={t.auto} total={t.total} h="h-2"/>
+                    <span className={`font-montserrat font-black text-xl ${cfg.text}`}>{t.total}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-px bg-gray-100">
+                  {t.macros.map(m=>(
+                    <div key={m.mp} className="bg-white px-5 py-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-sm font-semibold text-gray-800 leading-tight">{m.mp}</span>
+                        <span className="font-montserrat font-black text-2xl text-gray-900 flex-shrink-0 leading-none">{m.total}</span>
+                      </div>
+                      <AutoBar man={m.manual} semi={m.semi} aut={m.auto} total={m.total} h="h-1.5"/>
+                      <div className="flex justify-between text-[9px] text-gray-400 mt-1.5">
+                        <span><b className="text-amber-600">{m.manual}</b> M</span>
+                        <span><b className="text-blue-500">{m.semi}</b> S</span>
+                        <span><b className="text-green-600">{m.auto}</b> A</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Por Responsable
+    ═══════════════════════════════ */
+    function SectionEcoResp() {
+      const [fEnt, setFEnt] = useState('Todos');
+      const [fTipo,setFTipo]= useState('Todos');
+      const entidades = ['Todos','NEGOFIN SA','ALIADOS COMERCIALES'];
+      const tipos     = ['Todos','Primario','Soporte','Gestión'];
+
+      const filtered = useMemo(()=>PROC.filter(r=>
+        (fEnt==='Todos'||r.ent===fEnt) && (fTipo==='Todos'||r.tm===fTipo)
+      ),[fEnt,fTipo]);
+
+      const byResp = useMemo(()=>{
+        const map = {};
+        filtered.forEach(r=>{
+          if(!r.rs) return;
+          if(!map[r.rs]) map[r.rs]={total:0,manual:0,semi:0,auto:0,macros:new Set(),pa:0,pA:0};
+          map[r.rs].total++;
+          map[r.rs].macros.add(r.mp);
+          if(r.pa) map[r.rs].pa+=r.pa;
+          if(r.pA) map[r.rs].pA+=r.pA;
+          if(r.cl==='Manual') map[r.rs].manual++;
+          else if(r.cl==='Semiautomático') map[r.rs].semi++;
+          else map[r.rs].auto++;
+        });
+        return Object.entries(map).map(([name,st])=>({
+          name,...st,macros:st.macros.size,
+          pctAuto: st.total ? Math.round((st.auto/st.total)*100) : 0,
+          pctPasos: st.pa ? Math.round((st.pA/st.pa)*100) : 0,
+        })).sort((a,b)=>b.total-a.total);
+      },[filtered]);
+
+      return (
+        <div className="space-y-4">
+          {/* Filtros */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Entidad:</span>
+              {entidades.map(e=>(
+                <button key={e} onClick={()=>setFEnt(e)}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${
+                    fEnt===e?'bg-blue-600 text-white border-blue-600':'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`}>{e==='Todos'?'Todas':e==='NEGOFIN SA'?'NegoFIN':'Aliados'}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo:</span>
+              {tipos.map(t=>(
+                <button key={t} onClick={()=>setFTipo(t)}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${
+                    fTipo===t?'bg-violet-600 text-white border-violet-600':'bg-white text-gray-600 border-gray-200 hover:border-violet-400'}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {byResp.map(r=>(
+              <div key={r.name} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-white font-bold text-sm leading-tight">{r.name}</div>
+                      <div className="text-blue-200 text-[10px] mt-0.5">{r.macros} macroproceso{r.macros!==1?'s':''}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-montserrat font-black text-3xl text-white leading-none">{r.total}</div>
+                      <div className="text-blue-200 text-[9px]">proced.</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <AutoBar man={r.manual} semi={r.semi} aut={r.auto} total={r.total} h="h-2"/>
+                  <div className="flex justify-between text-xs">
+                    <div className="text-center">
+                      <div className="font-bold text-amber-600">{r.manual}</div>
+                      <div className="text-gray-400 text-[9px]">Manual</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-blue-500">{r.semi}</div>
+                      <div className="text-gray-400 text-[9px]">Semi</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-green-600">{r.auto}</div>
+                      <div className="text-gray-400 text-[9px]">Auto</div>
+                    </div>
+                    <div className="text-center border-l border-gray-100 pl-3">
+                      <div className="font-bold text-ng-verde">{r.pctAuto}%</div>
+                      <div className="text-gray-400 text-[9px]">autom.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Por Macroproceso
+    ═══════════════════════════════ */
+    function SectionEcoMacro() {
+      const [fTipo, setFTipo] = useState('Todos');
+      const tipos = ['Todos','Primario','Soporte','Gestión'];
+
+      const filtered = useMemo(()=> fTipo==='Todos' ? PROC : PROC.filter(r=>r.tm===fTipo),[fTipo]);
+
+      const byMacro = useMemo(()=>{
+        const map = {};
+        filtered.forEach(r=>{
+          if(!r.mp) return;
+          if(!map[r.mp]) map[r.mp]={manual:0,semi:0,auto:0,tipo:r.tm,resps:new Set(),procs:new Set()};
+          map[r.mp].resps.add(r.rs);
+          map[r.mp].procs.add(r.pr);
+          if(r.cl==='Manual') map[r.mp].manual++;
+          else if(r.cl==='Semiautomático') map[r.mp].semi++;
+          else map[r.mp].auto++;
+        });
+        return Object.entries(map).map(([name,st])=>({
+          name,...st,
+          total:st.manual+st.semi+st.auto,
+          resps:st.resps.size,procs:st.procs.size,
+        })).sort((a,b)=>{
+          const o={Primario:0,Gestión:1,Soporte:2};
+          return (o[a.tipo]??3)-(o[b.tipo]??3)||b.total-a.total;
+        });
+      },[filtered]);
+
+      const tipo_totals = useMemo(()=>{
+        const m={};
+        byMacro.forEach(r=>{
+          if(!m[r.tipo]) m[r.tipo]={manual:0,semi:0,auto:0,total:0};
+          m[r.tipo].manual+=r.manual; m[r.tipo].semi+=r.semi;
+          m[r.tipo].auto+=r.auto; m[r.tipo].total+=r.total;
+        });
+        return m;
+      },[byMacro]);
+
+      const tipoGroups = ['Primario','Gestión','Soporte'].filter(t=> fTipo==='Todos' || t===fTipo);
+
+      return (
+        <div className="space-y-4">
+          {/* Filtro tipo */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo:</span>
+            {tipos.map(t=>{
+              const cfg = tc(t);
+              return (
+                <button key={t} onClick={()=>setFTipo(t)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                    fTipo===t?`${cfg.side} text-white border-transparent`:'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}>{t}</button>
+              );
+            })}
+          </div>
+
+          {tipoGroups.map(tipo=>{
+            const rows  = byMacro.filter(m=>m.tipo===tipo);
+            if(!rows.length) return null;
+            const tot   = tipo_totals[tipo]||{};
+            const cfg   = tc(tipo);
+            const maxT  = Math.max(...rows.map(r=>r.total),1);
+            return (
+              <div key={tipo} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className={`px-6 py-3 ${cfg.bg} border-b flex items-center justify-between`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`w-1 h-8 rounded-full ${cfg.side}`}/>
+                    <span className={`font-montserrat font-black text-base ${cfg.text}`}>{tipo}</span>
+                    <span className={`text-xs ${cfg.text} opacity-60`}>{rows.length} macroprocesos</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <AutoBar man={tot.manual||0} semi={tot.semi||0} aut={tot.auto||0} total={tot.total||1} h="h-2"/>
+                    <span className={`font-montserrat font-black text-lg ${cfg.text}`}>{tot.total}</span>
+                  </div>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-2 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Macroproceso</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proc.</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">Resp.</th>
+                      <th className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[160px]">Distribución</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {rows.map((m,i)=>(
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-6 py-3 font-medium text-gray-800">{m.name}</td>
+                        <td className="px-4 py-3 text-center text-gray-500">{m.procs}</td>
+                        <td className="px-4 py-3 text-center text-gray-500">{m.resps}</td>
+                        <td className="px-4 py-3">
+                          <AutoBar man={m.manual} semi={m.semi} aut={m.auto} total={m.total} h="h-2"/>
+                          <div className="flex justify-between text-[9px] text-gray-400 mt-1">
+                            <span>{m.manual}M</span><span>{m.semi}S</span><span>{m.auto}A</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${cfg.side}`} style={{width:`${(m.total/maxT)*100}%`}}/>
+                            </div>
+                            <span className="font-bold text-gray-900 w-5 text-right">{m.total}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Base de Datos (BD)
+    ═══════════════════════════════ */
+    function SectionBD() {
+      const NEGO = useMemo(()=>PROC.filter(r=>r.ent==='NEGOFIN SA'),[]);
+      const [search, setSearch] = useState('');
+      const [fMp,  setFMp]  = useState('');
+      const [fRs,  setFRs]  = useState('');
+      const [fCl,  setFCl]  = useState('');
+      const [page, setPage] = useState(1);
+      const PER = 15;
+
+      const macros = useMemo(()=>uniq(NEGO,r=>r.mp),[]);
+      const resps  = useMemo(()=>uniq(NEGO,r=>r.rs),[]);
+
+      const filtered = useMemo(()=>{
+        const q = search.toLowerCase();
+        return NEGO.filter(r=>
+          (!fMp||r.mp===fMp)&&(!fRs||r.rs===fRs)&&(!fCl||r.cl===fCl)&&
+          (!q||[r.mp,r.pr,r.pc,r.rs].some(f=>f&&f.toLowerCase().includes(q)))
+        );
+      },[NEGO,search,fMp,fRs,fCl]);
+
+      const pages  = Math.max(1,Math.ceil(filtered.length/PER));
+      const pg     = Math.min(page,pages);
+      const rows   = filtered.slice((pg-1)*PER,pg*PER);
+
+      const Sel=({val,setVal,opts,ph})=>(
+        <div className="relative">
+          <select value={val} onChange={e=>{setVal(e.target.value);setPage(1);}}
+            className="w-full pl-3 pr-7 py-2 border border-gray-200 rounded-xl text-xs text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400 appearance-none">
+            <option value="">{ph}</option>
+            {opts.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+          <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      );
+
+      return (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtros</span>
+              <button onClick={()=>{setSearch('');setFMp('');setFRs('');setFCl('');setPage(1);}} className="text-[10px] text-cyan-600 font-semibold hover:underline">↺ Limpiar</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="relative">
+                <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Buscar procedimiento..."
+                  className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <Sel val={fMp} setVal={setFMp} opts={macros} ph="Todos los macroprocesos"/>
+              <Sel val={fRs} setVal={setFRs} opts={resps}  ph="Todos los responsables"/>
+              <Sel val={fCl} setVal={setFCl} opts={['Manual','Semiautomático','Automático']} ph="Toda clasificación"/>
+            </div>
+            <div className="text-[10px] text-gray-400"><span className="font-bold text-cyan-600">{filtered.length}</span> de {NEGO.length} registros (NEGOFIN SA)</div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs min-w-[800px]">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {['N°','Macroproceso','Proceso','Procedimiento','Responsable','Pasos','Aut.','%','Clase'].map((h,i)=>(
+                      <th key={h} className={`px-4 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap ${i>=5?'text-right':'text-left'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {rows.map((r,i)=>{
+                    const cfg=cc(r.cl);
+                    const pct=r.pa&&r.pA!=null?Math.round((r.pA/r.pa)*100):null;
+                    return (
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-2.5 font-mono text-gray-300 text-[10px] text-center">{r.id}</td>
+                        <td className="px-4 py-2.5 max-w-[150px] cell-truncate text-gray-600" title={r.mp}>{r.mp}</td>
+                        <td className="px-4 py-2.5 max-w-[130px] cell-truncate text-gray-600" title={r.pr}>{r.pr}</td>
+                        <td className="px-4 py-2.5 max-w-[200px] cell-truncate font-medium text-gray-800" title={r.pc}>{r.pc}</td>
+                        <td className="px-4 py-2.5 max-w-[150px] cell-truncate text-gray-500" title={r.rs}>{r.rs}</td>
+                        <td className="px-4 py-2.5 text-right font-mono">{r.pa??'—'}</td>
+                        <td className="px-4 py-2.5 text-right font-mono font-bold text-ng-verde">{r.pA!=null?r.pA:'—'}</td>
+                        <td className="px-4 py-2.5 text-right font-mono">{pct!=null?pct+'%':'—'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${cfg.bg} ${cfg.text}`}>{r.cl}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-[10px] text-gray-400">Pág. {pg}/{pages}</span>
+              <div className="flex gap-2">
+                <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={pg===1}
+                  className="px-3 py-1 text-xs font-semibold border border-gray-200 rounded-lg disabled:opacity-30 hover:border-cyan-400 hover:text-cyan-600 transition-colors">← Ant.</button>
+                <button onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={pg===pages}
+                  className="px-3 py-1 text-xs font-semibold border border-gray-200 rounded-lg disabled:opacity-30 hover:border-cyan-400 hover:text-cyan-600 transition-colors">Sig. →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Procesos (completo)
+    ═══════════════════════════════ */
+    function SectionProcesos() {
+      const [search,setSearch]=useState('');
+      const [fEnt, setFEnt] =useState('');
+      const [fTipo,setFTipo]=useState('');
+      const [fMp,  setFMp]  =useState('');
+      const [fRs,  setFRs]  =useState('');
+      const [fCl,  setFCl]  =useState('');
+      const [fPri, setFPri] =useState('');
+      const [page, setPage] =useState(1);
+      const PER=15;
+
+      const macros = useMemo(()=>uniq(PROC,r=>r.mp),[]);
+      const resps  = useMemo(()=>uniq(PROC,r=>r.rs),[]);
+
+      const filtered = useMemo(()=>{
+        const q=search.toLowerCase();
+        return PROC.filter(r=>
+          (!fEnt||r.ent===fEnt)&&(!fTipo||r.tm===fTipo)&&
+          (!fMp||r.mp===fMp)&&(!fRs||r.rs===fRs)&&
+          (!fCl||r.cl===fCl)&&(!fPri||r.pri===fPri)&&
+          (!q||[r.mp,r.pr,r.pc,r.rs].some(f=>f&&f.toLowerCase().includes(q)))
+        );
+      },[search,fEnt,fTipo,fMp,fRs,fCl,fPri]);
+
+      const pages=Math.max(1,Math.ceil(filtered.length/PER));
+      const pg=Math.min(page,pages);
+      const rows=filtered.slice((pg-1)*PER,pg*PER);
+
+      const Sel=({val,setVal,opts,ph})=>(
+        <div className="relative">
+          <select value={val} onChange={e=>{setVal(e.target.value);setPage(1);}}
+            className="w-full pl-3 pr-7 py-2 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none">
+            <option value="">{ph}</option>
+            {opts.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+          <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      );
+
+      return (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtros</span>
+              <button onClick={()=>{setSearch('');setFEnt('');setFTipo('');setFMp('');setFRs('');setFCl('');setFPri('');setPage(1);}} className="text-[10px] text-orange-500 font-semibold hover:underline">↺ Limpiar</button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="relative col-span-2 sm:col-span-1">
+                <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Buscar..."
+                  className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"/>
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <Sel val={fEnt}  setVal={setFEnt}  opts={['NEGOFIN SA','ALIADOS COMERCIALES']} ph="Entidad"/>
+              <Sel val={fTipo} setVal={setFTipo} opts={['Primario','Soporte','Gestión']}      ph="Tipo macro"/>
+              <Sel val={fMp}   setVal={setFMp}   opts={macros} ph="Macroproceso"/>
+              <Sel val={fRs}   setVal={setFRs}   opts={resps}  ph="Responsable"/>
+              <Sel val={fCl}   setVal={setFCl}   opts={['Manual','Semiautomático','Automático']} ph="Clase"/>
+              <Sel val={fPri}  setVal={setFPri}  opts={['Alta','Medio','Bajo']} ph="Prioridad"/>
+            </div>
+            <div className="text-[10px] text-gray-400"><span className="font-bold text-orange-500">{filtered.length}</span> de {PROC.length} procedimientos</div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs min-w-[1100px]">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {['N°','Entidad','Tipo','Macroproceso','Proceso','Procedimiento','Responsable','Pasos','Clase','Prioridad','Analista','Tipo Mejora'].map((h,i)=>(
+                      <th key={h} className={`px-3 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap text-left ${i===7?'text-right':''}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {rows.map((r,i)=>{
+                    const c=cc(r.cl); const p=r.pri?pc(r.pri):null; const t=tc(r.tm);
+                    return (
+                      <tr key={i} className="hover:bg-orange-50/30 transition-colors">
+                        <td className="px-3 py-2.5 font-mono text-gray-300 text-[10px]">{r.id}</td>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[8px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{r.ent==='NEGOFIN SA'?'NGF':'AC'}</span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${t.bg} ${t.text}`}>{r.tm?.slice(0,3)}</span>
+                        </td>
+                        <td className="px-3 py-2.5 max-w-[150px] cell-truncate text-gray-600" title={r.mp}>{r.mp}</td>
+                        <td className="px-3 py-2.5 max-w-[130px] cell-truncate text-gray-600" title={r.pr}>{r.pr}</td>
+                        <td className="px-3 py-2.5 max-w-[180px] cell-truncate font-medium text-gray-800" title={r.pc}>{r.pc}</td>
+                        <td className="px-3 py-2.5 max-w-[140px] cell-truncate text-gray-500" title={r.rs}>{r.rs}</td>
+                        <td className="px-3 py-2.5 text-right font-mono">{r.pa??'—'}</td>
+                        <td className="px-3 py-2.5"><span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.bg} ${c.text}`}>{r.cl}</span></td>
+                        <td className="px-3 py-2.5">{p&&<span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${p.bg} ${p.text}`}>{r.pri}</span>}</td>
+                        <td className="px-3 py-2.5 font-medium text-gray-700">{r.an||<span className="text-gray-200">—</span>}</td>
+                        <td className="px-3 py-2.5">{r.tmj?<span className="text-[9px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">{r.tmj}</span>:<span className="text-gray-200">—</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-[10px] text-gray-400">Pág. {pg}/{pages} · {PER} por página</span>
+              <div className="flex gap-2">
+                <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={pg===1}
+                  className="px-3 py-1 text-xs font-semibold border border-gray-200 rounded-lg disabled:opacity-30 hover:border-orange-400 hover:text-orange-500 transition-colors">← Ant.</button>
+                <button onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={pg===pages}
+                  className="px-3 py-1 text-xs font-semibold border border-gray-200 rounded-lg disabled:opacity-30 hover:border-orange-400 hover:text-orange-500 transition-colors">Sig. →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: TD Eco. Respon. (Aut.)
+    ═══════════════════════════════ */
+    function SectionAutResp() {
+      const byResp = useMemo(()=>{
+        const map={};
+        PROC.forEach(r=>{
+          if(!r.rs) return;
+          if(!map[r.rs]) map[r.rs]={total:0,manual:0,semi:0,auto:0};
+          map[r.rs].total++;
+          if(r.cl==='Manual') map[r.rs].manual++;
+          else if(r.cl==='Semiautomático') map[r.rs].semi++;
+          else map[r.rs].auto++;
+        });
+        return Object.entries(map).map(([name,st])=>({
+          name,...st,
+          pMan:((st.manual/st.total)*100).toFixed(1),
+          pSemi:((st.semi/st.total)*100).toFixed(1),
+          pAuto:((st.auto/st.total)*100).toFixed(1),
+        })).sort((a,b)=>b.total-a.total);
+      },[]);
+
+      const totM = byResp.reduce((s,r)=>s+r.manual,0);
+      const totS = byResp.reduce((s,r)=>s+r.semi,0);
+      const totA = byResp.reduce((s,r)=>s+r.auto,0);
+      const totT = byResp.reduce((s,r)=>s+r.total,0);
+
+      return (
+        <div className="space-y-4">
+          {/* Resumen general */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">General — NEGOFIN SA</h3>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {[
+                {label:'Manual',        count:totM, pct:((totM/totT)*100).toFixed(1), bg:'bg-amber-50',  text:'text-amber-700',  bar:'bg-amber-400'},
+                {label:'Semiautomático',count:totS, pct:((totS/totT)*100).toFixed(1), bg:'bg-blue-50',   text:'text-blue-700',   bar:'bg-blue-400'},
+                {label:'Automático',    count:totA, pct:((totA/totT)*100).toFixed(1), bg:'bg-green-50',  text:'text-green-700',  bar:'bg-green-500'},
+              ].map(c=>(
+                <div key={c.label} className={`rounded-xl p-4 ${c.bg}`}>
+                  <div className={`text-2xl font-montserrat font-black ${c.text}`}>{c.count}</div>
+                  <div className={`text-xs font-semibold ${c.text}`}>{c.label}</div>
+                  <div className={`text-[10px] ${c.text} opacity-70`}>{c.pct}%</div>
+                </div>
+              ))}
+            </div>
+            <AutoBar man={totM} semi={totS} aut={totA} total={totT} h="h-3"/>
+          </div>
+
+          {/* Tabla por responsable */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-bold text-sm text-gray-800">Automatización por Responsable</h3>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Responsable</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider text-amber-500">Manual</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider text-blue-500">Semi</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider text-green-500">Auto</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[180px]">Distribución</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">% Auto</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {byResp.map((r,i)=>(
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-5 py-3 font-medium text-gray-800">{r.name}</td>
+                    <td className="px-4 py-3 text-right font-bold text-gray-900">{r.total}</td>
+                    <td className="px-4 py-3 text-right text-amber-600">{r.manual}</td>
+                    <td className="px-4 py-3 text-right text-blue-500">{r.semi}</td>
+                    <td className="px-4 py-3 text-right text-green-600 font-semibold">{r.auto}</td>
+                    <td className="px-4 py-3"><AutoBar man={r.manual} semi={r.semi} aut={r.auto} total={r.total} h="h-2"/></td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${parseFloat(r.pAuto)>0?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>
+                        {r.pAuto}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-ng-suave border-t-2 border-ng-medio">
+                  <td className="px-5 py-2.5 font-black text-ng-oscuro text-xs uppercase tracking-wide">TOTAL</td>
+                  <td className="px-4 py-2.5 text-right font-black text-ng-oscuro">{totT}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-amber-600">{totM}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-blue-500">{totS}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-green-600">{totA}</td>
+                  <td className="px-4 py-2.5"><AutoBar man={totM} semi={totS} aut={totA} total={totT} h="h-2"/></td>
+                  <td className="px-4 py-2.5 text-right font-black text-ng-verde">{((totA/totT)*100).toFixed(1)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: TD Eco. Macro (Aut.)
+    ═══════════════════════════════ */
+    function SectionAutMacro() {
+      const [fTipo, setFTipo] = useState('');
+      const tipos = ['Primario','Soporte','Gestión'];
+
+      const byMacro = useMemo(()=>{
+        const map={};
+        PROC.forEach(r=>{
+          if(!r.mp) return;
+          if(!map[r.mp]) map[r.mp]={total:0,manual:0,semi:0,auto:0,tipo:r.tm};
+          map[r.mp].total++;
+          if(r.cl==='Manual') map[r.mp].manual++;
+          else if(r.cl==='Semiautomático') map[r.mp].semi++;
+          else map[r.mp].auto++;
+        });
+        return Object.entries(map)
+          .map(([name,st])=>({name,...st,pAuto:st.total?((st.auto/st.total)*100).toFixed(1):0}))
+          .filter(r=>!fTipo||r.tipo===fTipo)
+          .sort((a,b)=>{const o={Primario:0,Gestión:1,Soporte:2};return (o[a.tipo]??3)-(o[b.tipo]??3)||b.total-a.total;});
+      },[fTipo]);
+
+      const tot={total:0,manual:0,semi:0,auto:0};
+      byMacro.forEach(r=>{tot.total+=r.total;tot.manual+=r.manual;tot.semi+=r.semi;tot.auto+=r.auto;});
+
+      return (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo de Macro:</span>
+            {[{v:'',l:'Todos'},...tipos.map(t=>({v:t,l:t}))].map(opt=>(
+              <button key={opt.v} onClick={()=>setFTipo(opt.v)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                  fTipo===opt.v?'bg-violet-600 text-white border-violet-600':'bg-white text-gray-600 border-gray-200 hover:border-violet-400'}`}>{opt.l}</button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Macroproceso</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipo</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-amber-500 uppercase tracking-wider">Manual</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-blue-500 uppercase tracking-wider">Semi</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-green-500 uppercase tracking-wider">Auto</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[160px]">Distribución</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider">% Auto</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {byMacro.map((m,i)=>{
+                  const cfg=tc(m.tipo);
+                  return (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-5 py-3 font-medium text-gray-800">{m.name}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.text}`}>{m.tipo}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-900">{m.total}</td>
+                      <td className="px-4 py-3 text-right text-amber-600">{m.manual}</td>
+                      <td className="px-4 py-3 text-right text-blue-500">{m.semi}</td>
+                      <td className="px-4 py-3 text-right text-green-600 font-semibold">{m.auto}</td>
+                      <td className="px-4 py-3"><AutoBar man={m.manual} semi={m.semi} aut={m.auto} total={m.total} h="h-2"/></td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${parseFloat(m.pAuto)>0?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>
+                          {m.pAuto}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-ng-suave border-t-2 border-ng-medio">
+                  <td className="px-5 py-2.5 font-black text-ng-oscuro text-xs uppercase" colSpan={2}>TOTAL</td>
+                  <td className="px-4 py-2.5 text-right font-black text-ng-oscuro">{tot.total}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-amber-600">{tot.manual}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-blue-500">{tot.semi}</td>
+                  <td className="px-4 py-2.5 text-right font-black text-green-600">{tot.auto}</td>
+                  <td className="px-4 py-2.5"><AutoBar man={tot.manual} semi={tot.semi} aut={tot.auto} total={tot.total} h="h-2"/></td>
+                  <td className="px-4 py-2.5 text-right font-black text-ng-verde">{((tot.auto/tot.total)*100).toFixed(1)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SECTION: Ind. Cobranzas
+    ═══════════════════════════════ */
+    function SectionCobranzas() {
+      const { total_procesos, manual_semi, obj_mejora_anual, cant_pro_mejora, meses } = IND_COB;
+      const totalPasos = COB_BD.reduce((s,r)=>s+(r.pa||0),0);
+      const totalAut   = COB_BD.reduce((s,r)=>s+(r.pA||0),0);
+      const pctGlobal  = totalPasos ? ((totalAut/totalPasos)*100).toFixed(1) : 0;
+      const maxVal     = Math.max(...meses.map(m=>m.objetivo), cant_pro_mejora, 1);
+
+      return (
+        <div className="space-y-5">
+          {/* KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              {label:'Procesos Cobranzas', val:total_procesos, color:'bg-ng-oscuro'},
+              {label:'Manual + Semi',       val:manual_semi,   color:'bg-amber-600'},
+              {label:'Obj. Mejora Anual',   val:(obj_mejora_anual*100)+'%', color:'bg-ng-verde'},
+              {label:'Automatiz. Global',   val:pctGlobal+'%', color:'bg-emerald-600'},
+            ].map(k=>(
+              <div key={k.label} className={`rounded-2xl p-5 text-white ${k.color} shadow-sm`}>
+                <div className="font-montserrat font-black text-4xl leading-none">{k.val}</div>
+                <div className="text-[10px] font-bold opacity-70 uppercase tracking-wider mt-2">{k.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {/* Seguimiento mensual */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-2 h-5 bg-green-500 rounded-full"/>
+                <h3 className="font-bold text-sm text-gray-800">Seguimiento Mensual de Mejoras</h3>
+                <span className="text-xs text-gray-400 ml-auto">Meta anual: {cant_pro_mejora} procedimientos</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    {['Mes','Mejorados','Acumulado','Objetivo','Avance','% Meta'].map((h,i)=>(
+                      <th key={h} className={`px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider ${i>=1?'text-right':''}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {meses.map((m,i)=>{
+                    const pct = cant_pro_mejora > 0 ? (m.acumulado/cant_pro_mejora*100) : 0;
+                    const ok  = m.objetivo > 0 && m.acumulado >= m.objetivo;
+                    return (
+                      <tr key={i} className={`hover:bg-gray-50 ${ok?'':'opacity-90'}`}>
+                        <td className="px-4 py-2.5 font-semibold text-gray-700">{m.mes}</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-ng-verde">{m.mejorados||'—'}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-gray-700">{m.acumulado}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-gray-400">{m.objetivo}</td>
+                        <td className="px-4 py-2.5 min-w-[100px]">
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${ok?'bg-green-500':'bg-amber-400'}`}
+                              style={{width:`${Math.min(100,(m.acumulado/maxVal)*100)}%`}}/>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${ok?'bg-green-100 text-green-700':'bg-amber-50 text-amber-700'}`}>
+                            {pct.toFixed(0)}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Análisis paso a paso */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <span className="w-2 h-5 bg-blue-500 rounded-full"/>
+                <h3 className="font-bold text-sm text-gray-800">Análisis por Paso — Fuente: BD</h3>
+                <span className="text-xs font-bold text-ng-verde ml-auto">{pctGlobal}% automatización</span>
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    {['Procedimiento','Pasos','Aut.','%','Estado','Barra'].map((h,i)=>(
+                      <th key={h} className={`px-3 py-2 text-[9px] font-bold text-gray-400 uppercase tracking-wider ${i>=1&&i<=3?'text-right':'text-left'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {COB_BD.map((r,i)=>{
+                    const pct=r.pa?Math.round((r.pA/r.pa)*100):0;
+                    const cfg=cc(r.cl);
+                    return (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-800">{r.pc}</td>
+                        <td className="px-3 py-2 text-right font-mono">{r.pa}</td>
+                        <td className="px-3 py-2 text-right font-mono font-bold text-ng-verde">{r.pA}</td>
+                        <td className="px-3 py-2 text-right font-mono">{pct}%</td>
+                        <td className="px-3 py-2">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{r.cl}</span>
+                        </td>
+                        <td className="px-3 py-2 min-w-[80px]">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${cfg.bar}`} style={{width:pct+'%'}}/>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="bg-ng-suave border-t-2 border-ng-medio font-bold text-xs">
+                    <td className="px-3 py-2 font-black text-ng-oscuro">TOTAL</td>
+                    <td className="px-3 py-2 text-right font-mono text-ng-oscuro">{totalPasos}</td>
+                    <td className="px-3 py-2 text-right font-mono text-ng-verde">{totalAut}</td>
+                    <td className="px-3 py-2 text-right font-mono font-black text-ng-verde">{pctGlobal}%</td>
+                    <td colSpan={2}/>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ═══════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════ */
+    function Sidebar({ active, setActive, collapsed, setCollapsed }) {
+      return (
+        <aside className={`flex-shrink-0 flex flex-col bg-sidebar h-full overflow-y-auto transition-all duration-200 ${collapsed?'w-14':'w-56'}`}>
+          {/* Logo */}
+          <div className={`flex items-center gap-3 px-4 py-4 border-b border-white/10 ${collapsed?'justify-center':''}`}>
+            <div className="bg-ng-claro rounded-xl w-8 h-8 flex items-center justify-center flex-shrink-0 shadow">
+              <span className="text-white font-montserrat font-black text-xs">N</span>
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="font-montserrat font-black text-white text-sm leading-tight">NegoFIN</div>
+                <div className="text-white/40 text-[9px] tracking-widest">S.A.E.C.A.</div>
+              </div>
+            )}
+            <button onClick={()=>setCollapsed(!collapsed)} className={`ml-auto text-white/30 hover:text-white/70 transition-colors ${collapsed?'hidden':''}`}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          </div>
+          {collapsed && (
+            <button onClick={()=>setCollapsed(false)} className="flex justify-center py-2 text-white/30 hover:text-white/70 border-b border-white/10">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          )}
+
+          {/* Nav */}
+          <nav className="flex-1 py-3">
+            {NAV.map(grp=>(
+              <div key={grp.group} className="mb-3">
+                {!collapsed && (
+                  <div className="px-4 py-1 text-[9px] font-black text-white/25 uppercase tracking-[2px]">{grp.group}</div>
+                )}
+                {grp.items.map(item=>{
+                  const isActive = active===item.id;
+                  return (
+                    <button key={item.id} onClick={()=>setActive(item.id)}
+                      title={collapsed?item.label:''}
+                      style={isActive?{'--accent':item.color, borderLeftColor:item.color}:{}}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left sidebar-item transition-all ${
+                        isActive ? 'active text-white' : 'text-white/50 hover:text-white/80'
+                      } ${collapsed?'justify-center':''}`}>
+                      <span style={{color:isActive?item.color:'inherit'}} className="text-base flex-shrink-0 leading-none">{item.icon}</span>
+                      {!collapsed && (
+                        <span className={`text-xs font-semibold leading-tight truncate ${isActive?'text-white':'text-white/60'}`}>{item.label}</span>
+                      )}
+                      {!collapsed && isActive && (
+                        <span style={{backgroundColor:item.color}} className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"/>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+
+          {/* Footer */}
+          {!collapsed && (
+            <div className="px-4 py-3 border-t border-white/10 text-[9px] text-white/20 text-center">
+              Ecosistema de Procesos · 2026
+            </div>
+          )}
+        </aside>
+      );
+    }
+
+    /* ═══════════════════════════════
+       APP PRINCIPAL
+    ═══════════════════════════════ */
+    const SECTION_MAP = {
+      'td':        SectionTD,
+      'gerencia':  SectionGerencia,
+      'eco-nego':  SectionEcoNego,
+      'eco-resp':  SectionEcoResp,
+      'eco-macro': SectionEcoMacro,
+      'bd':        SectionBD,
+      'procesos':  SectionProcesos,
+      'aut-resp':  SectionAutResp,
+      'aut-macro': SectionAutMacro,
+      'cobranzas': SectionCobranzas,
+    };
+
+    function App() {
+      const [active,    setActive]    = useState('td');
+      const [collapsed, setCollapsed] = useState(false);
+
+      const item    = ALL_ITEMS.find(i=>i.id===active) || ALL_ITEMS[0];
+      const Section = SECTION_MAP[active] || SectionTD;
+
+      return (
+        <div className="flex w-full h-full overflow-hidden bg-gray-100">
+          <Sidebar active={active} setActive={setActive} collapsed={collapsed} setCollapsed={setCollapsed}/>
+
+          {/* Main content */}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Page header */}
+            <header className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 shadow-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-base flex-shrink-0 shadow-sm"
+                  style={{backgroundColor:item.color}}>
+                  {item.icon}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-montserrat font-black text-gray-900 text-base leading-tight truncate">{item.label}</h1>
+                  <p className="text-gray-400 text-[10px] truncate">Excel: <span className="font-medium text-gray-500">{item.sheet}</span></p>
+                </div>
+              </div>
+              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                <div className="text-right hidden sm:block">
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wider">Total procedimientos</div>
+                  <div className="font-montserrat font-black text-gray-900 text-lg leading-none">{PROC.length}</div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-ng-verde flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  OyP
+                </div>
+              </div>
+            </header>
+
+            {/* Scrollable content */}
+            <main className="flex-1 overflow-y-auto p-6">
+              <Section/>
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
